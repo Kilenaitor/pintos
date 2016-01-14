@@ -20,10 +20,6 @@
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
-/* List of processes that are set to be waiting.
- * Processes are added when they are put to sleep. */
-static struct list sleep_list;
-
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -41,7 +37,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(&sleep_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -106,8 +101,8 @@ timer_sleep (int64_t ticks)
    
     //Putting thread to sleep
     //Interrupt sensitive action
-    thread_current ()->end_tick = start + ticks; 		/* When the timer should resume */
-    list_push_back(&sleep_list, &(thread_current ()->elem));	/* Adding to sleep list */
+    struct thread *t = thread_current();
+    t->end_tick = start + ticks;
     thread_block(); 						/* Blocks the thread */
 
     //Returning interrupts 
@@ -199,7 +194,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
       thread_unblock(t);
     }
   }	
-             
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
