@@ -138,6 +138,14 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+  
+  struct list_elem *e;
+  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
+    struct thread *t = list_entry (e, struct thread, sleepelem);
+    if(t->end_tick == ticks) {
+      thread_unblock(t);
+    }
+  }	
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
