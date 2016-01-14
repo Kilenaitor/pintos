@@ -102,7 +102,7 @@ timer_sleep (int64_t ticks)
     //Putting thread to sleep
     //Interrupt sensitive action
     struct thread *t = thread_current();
-    t->end_tick = start + ticks;
+    t->end_tick = ticks;
     thread_block(); 						/* Blocks the thread */
 
     //Returning interrupts 
