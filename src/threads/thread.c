@@ -239,8 +239,11 @@ thread_block (void)
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
+  struct thread *t = thread_current ();
+  
   thread_current ()->status = THREAD_BLOCKED;
-  list_push_back(&sleep_list, &(thread_current ()->elem));
+  
+  list_push_back(&sleep_list, &t->elem);
   
   schedule ();
 }
