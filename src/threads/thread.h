@@ -92,6 +92,8 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+ 
+    struct list_elem sleepelem;		/* List element for sleeping threads list. */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -100,6 +102,9 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
+    unsigned end_tick;			/* Holds eventual timer tick count */
+
   };
 
 /* If false (default), use round-robin scheduler.
