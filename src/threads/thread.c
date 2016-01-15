@@ -147,6 +147,7 @@ thread_tick (void)
     if(tmp_elem->end_tick == 0) {
       printf("End tick value is %d\n", tmp_elem->end_tick);
       printf("Magic is %d\n", tmp_elem->magic);
+      printf("Thread status is %s", tmp_elem->status);
       thread_unblock(tmp_elem);
     } else { 
         printf("Decrementing by 1\n");
