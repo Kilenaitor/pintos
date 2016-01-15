@@ -145,8 +145,8 @@ thread_tick (void)
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     if(tmp_elem->end_tick == 0) {
-      printf("End tick value is %d", tmp_elem->end_tick);
-      printf("Magic is %d", tmp_elem->magic);
+      printf("\nEnd tick value is %d\n", tmp_elem->end_tick);
+      printf("\nMagic is %d\n", tmp_elem->magic);
       ASSERT(tmp_elem != NULL);
       ASSERT(tmp_elem->magic != NULL);
       thread_unblock(tmp_elem);
@@ -249,6 +249,8 @@ thread_block (void)
   struct thread *t = thread_current (); //Grabbing current thread
   t->status = THREAD_BLOCKED;
   
+  printf("Thread ticks are: %d\n", t->end_tick);
+  printf("Thread magic is %d\n", t->magic);
   list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
   
   schedule ();
