@@ -139,12 +139,13 @@ thread_tick (void)
   else
     kernel_ticks++;
   
+  
+  /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     if(tmp_elem->end_tick == 0) {
-      printf(tmp_elem->magic);
-      printf(t->magic);
+      ASSERT(tmp_elem != NULL)
       thread_unblock(tmp_elem);
     } else {
         tmp_elem->end_tick -= 1;
@@ -241,11 +242,10 @@ thread_block (void)
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  struct thread *t = thread_current ();
+  struct thread *t = thread_current (); //Grabbing current thread
+  t->status = THREAD_BLOCKED;
   
-  thread_current ()->status = THREAD_BLOCKED;
-  
-  list_push_back(&sleep_list, &t->elem);
+  list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
   
   schedule ();
 }
