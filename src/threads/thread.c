@@ -144,14 +144,14 @@ thread_tick (void)
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     printf("List size is %d\n", list_size(&sleep_list));
-    if(tmp_elem->end_tick == 0) {
+    if(tmp_elem->end_tick > 0) {
+      printf("Decrementing by 1\n");
+      tmp_elem->end_tick -= 1;
+    } else { 
+      ASSERT(tmp_elem->status == THREAD_BLOCKED);
       printf("End tick value is %d\n", tmp_elem->end_tick);
       printf("Magic is %d\n", tmp_elem->magic);
-      printf("Thread status is %s", tmp_elem->status);
       thread_unblock(tmp_elem);
-    } else { 
-        printf("Decrementing by 1\n");
-        tmp_elem->end_tick -= 1;
     }
   }	
 
