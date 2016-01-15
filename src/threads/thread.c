@@ -154,9 +154,9 @@ thread_tick (void)
       printf("Magic is %d\n", tmp_elem->magic);
       printf("Calling unblock\n");
       thread_unblock(tmp_elem);
-      printf("List size is %d", list_size(%sleep_list));
+      printf("List size is %d\n", list_size(&sleep_list));
       printf("Unblock was successful. Removing from list.\n");
-      printf("New list size is %d", list_size(%sleep_list));
+      printf("New list size is %d\n", list_size(%sleep_list));
     }
   }	
 
