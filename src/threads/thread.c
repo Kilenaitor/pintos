@@ -261,11 +261,12 @@ thread_sleep (void)
   
   printf("Thread ticks are: %d\n", t->end_tick);
   printf("Thread magic is %d\n", t->magic);
+  t->status = THREAD_BLOCKED;
+  
   if(t != idle_thread) {
     list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
   }
   
-  t->status = THREAD_BLOCKED;
   schedule ();
 }
 
