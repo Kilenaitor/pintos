@@ -247,6 +247,18 @@ thread_block (void)
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
+  struct thread *t = thread_current ();
+  t->status = THREAD_BLOCKED;
+  
+  schedule ();
+}
+
+void 
+thread_sleep (void)
+{
+  ASSERT (!intr_context ());
+  ASSERT (intr_get_level () == INTR_OFF);
+
   struct thread *t = thread_current (); //Grabbing current thread
   printf("Thread ticks are: %d\n", t->end_tick);
   printf("Thread magic is %d\n", t->magic);
