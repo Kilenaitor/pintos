@@ -258,9 +258,12 @@ thread_sleep (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   struct thread *t = thread_current (); //Grabbing current thread
+  
   printf("Thread ticks are: %d\n", t->end_tick);
   printf("Thread magic is %d\n", t->magic);
-  list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
+  if(t != idle_thread) {
+    list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
+  }
   
   t->status = THREAD_BLOCKED;
   schedule ();
