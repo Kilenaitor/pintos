@@ -143,7 +143,9 @@ thread_tick (void)
   struct list_elem *e;
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, elem);
-    ASSERT (t->status == THREAD_BLOCKED);
+    
+    ASSERT (tmp_elem->status == THREAD_BLOCKED);
+    
     if(tmp_elem->end_tick > 0) {
       printf("Decrementing by 1\n");
       tmp_elem->end_tick--;
