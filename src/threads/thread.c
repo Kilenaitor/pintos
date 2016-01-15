@@ -142,6 +142,9 @@ thread_tick (void)
   /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
+    if(e == list_tail(&sleep_list)) {
+      break;
+    }
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     printf("List size is %d\n", list_size(&sleep_list));
     if(tmp_elem->status == THREAD_BLOCKED) {
