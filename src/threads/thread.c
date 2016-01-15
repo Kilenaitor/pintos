@@ -142,6 +142,8 @@ thread_tick (void)
   /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
   struct list_elem *e_next;
+
+  printf("Status1: %d\n", t->status);
   
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = e_next) {
     e_next = list_next(e);
@@ -265,6 +267,7 @@ thread_sleep (void)
   printf("Thread ticks are: %d\n", t->end_tick);
   printf("Thread magic is %d\n", t->magic);
   t->status = THREAD_BLOCKED;
+  printf("StatusASDF: %d\n", t->status);
   
   if(t != idle_thread) {
     list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
