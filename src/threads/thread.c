@@ -148,6 +148,9 @@ thread_tick (void)
       printf("Decrementing by 1\n");
       tmp_elem->end_tick -= 1;
     } else { 
+      ASSERT(tmp_elem->status != THREAD_RUNNING);
+      ASSERT(tmp_elem->status != THREAD_DYING);
+      ASSERT(tmp_elem->status != THREAD_READY);
       ASSERT(tmp_elem->status == THREAD_BLOCKED);
       printf("End tick value is %d\n", tmp_elem->end_tick);
       printf("Magic is %d\n", tmp_elem->magic);
