@@ -141,21 +141,20 @@ thread_tick (void)
   
   /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
-  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
-    if(e == list_tail(&sleep_list)) {
-      break;
-    }
+  struct list_elem *e_next;
+  
+  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = e_next) {
+    e_next = list_next(e);
+    
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
-    printf("List size is %d\n", list_size(&sleep_list));
-    if(tmp_elem->status == THREAD_BLOCKED) {
-      if(tmp_elem->end_tick > 0) {
-        printf("Decrementing by 1\n");
-        tmp_elem->end_tick -= 1;
-      } else { 
-        printf("End tick value is %d\n", tmp_elem->end_tick);
-        printf("Magic is %d\n", tmp_elem->magic);
-        thread_unblock(tmp_elem);
-      }
+    ASSERT (t->status == THREAD_BLOCKED);
+    if(tmp_elem->end_tick > 0) {
+      printf("Decrementing by 1\n");
+      tmp_elem->end_tick--;
+    } else { 
+      printf("End tick value is %d\n", tmp_elem->end_tick);
+      printf("Magic is %d\n", tmp_elem->magic);
+      thread_unblock(tmp_elem);
     }
   }	
 
@@ -268,7 +267,6 @@ thread_sleep (void)
   t->status = THREAD_BLOCKED;
   
   if(t != idle_thread) {
-    ASSERT(t->status == THREAD_BLOCKED);
     list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
   }
   
