@@ -144,6 +144,7 @@ thread_tick (void)
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, elem);
     
+    printf("Current thread is: %s", tmp_elem->name);
     ASSERT (tmp_elem->status == THREAD_BLOCKED);
     
     if(tmp_elem->end_tick > 0) {
