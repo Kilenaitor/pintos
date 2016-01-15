@@ -148,13 +148,10 @@ thread_tick (void)
     ASSERT (tmp_elem->status == THREAD_BLOCKED);
     
     if(tmp_elem->end_tick > 0) {
-      printf("Decrementing by 1\n");
-      tmp_elem->end_tick--;
+      tmp_elem->end_tick -= 1;
     } else { 
-      printf("End tick value is %d\n", tmp_elem->end_tick);
+      printf("Remaining ticks: %d\n", tmp_elem->end_tick);
       printf("Magic is %d\n", tmp_elem->magic);
-      list_remove(e);
-      ASSERT (tmp_elem->status == THREAD_BLOCKED);
       thread_unblock(tmp_elem);
     }
   }	
