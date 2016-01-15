@@ -261,7 +261,7 @@ thread_sleep (void)
   struct thread *t = thread_current (); //Grabbing current thread
   t->status = THREAD_BLOCKED;
   
-  if(t != idle_thread) {
+  if(t != idle_thread && t != initial_thread) {
     
 //    printf("Thread ticks are: %d\n", t->end_tick);
 //    printf("Thread magic is %d\n", t->magic);
