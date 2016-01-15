@@ -144,6 +144,7 @@ thread_tick (void)
   struct list_elem *e;
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
+    ASSERT(e != NULL);
     if(tmp_elem->end_tick == 0) {
       printf("\nEnd tick value is %d\n", tmp_elem->end_tick);
       printf("\nMagic is %d\n", tmp_elem->magic);
