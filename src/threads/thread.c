@@ -141,13 +141,7 @@ thread_tick (void)
   
   /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
-  struct list_elem *e_next;
-
-  printf("Status1: %d\n", t->status);
-  
-  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = e_next) {
-    e_next = list_next(e);
-    
+  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, elem);
     ASSERT (t->status == THREAD_BLOCKED);
     if(tmp_elem->end_tick > 0) {
