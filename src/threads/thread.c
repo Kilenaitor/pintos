@@ -244,10 +244,8 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   struct thread *t = thread_current (); //Grabbing current thread
-  t->status = THREAD_BLOCKED;
-  
-  ASSERT(t->magic != NULL);
   list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
+  t->status = THREAD_BLOCKED;
   
   schedule ();
 }
