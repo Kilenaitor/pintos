@@ -143,6 +143,8 @@ thread_tick (void)
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     if(tmp_elem->end_tick == 0) {
+      printf(tmp_elem->MAGIC);
+      printf(t->MAGIC);
       thread_unblock(tmp_elem);
     } else {
         tmp_elem->end_tick -= 1;
