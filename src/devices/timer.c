@@ -91,7 +91,7 @@ timer_sleep (int64_t ticks)
 {
   /* Ignoring the sleep if no ticks */
   if(ticks != 0) {
-    int64_t start = timer_ticks ();
+    //int64_t start = timer_ticks ();
 
     ASSERT (intr_get_level () == INTR_ON);
 
