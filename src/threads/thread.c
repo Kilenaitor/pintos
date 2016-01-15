@@ -156,7 +156,7 @@ thread_tick (void)
       thread_unblock(tmp_elem);
       printf("List size is %d\n", list_size(&sleep_list));
       printf("Unblock was successful. Removing from list.\n");
-      printf("New list size is %d\n", list_size(%sleep_list));
+      printf("New list size is %d\n", list_size(&sleep_list));
     }
   }	
 
