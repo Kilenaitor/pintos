@@ -266,7 +266,8 @@ thread_sleep (void)
   printf("Thread magic is %d\n", t->magic);
   t->status = THREAD_BLOCKED;
   
-  if(t != idle_thread && t->status == THREAD_BLOCKED) {
+  if(t != idle_thread) {
+    ASSERT(t->status == THREAD_BLOCKED);
     list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
   }
   
