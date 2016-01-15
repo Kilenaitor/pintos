@@ -153,8 +153,9 @@ thread_tick (void)
     } else { 
       printf("End tick value is %d\n", tmp_elem->end_tick);
       printf("Magic is %d\n", tmp_elem->magic);
-      thread_unblock(tmp_elem);
       list_remove(e);
+      ASSERT (tmp_elem->status == THREAD_BLOCKED);
+      thread_unblock(tmp_elem);
     }
   }	
 
