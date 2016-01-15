@@ -139,20 +139,17 @@ thread_tick (void)
   else
     kernel_ticks++;
   
-  
   /* Iterate over sleepy threads to see if any need to be awoken */
   struct list_elem *e;
   for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
     struct thread *tmp_elem = list_entry (e, struct thread, sleepelem);
     ASSERT(list_empty(&sleep_list) != 1);
     if(tmp_elem->end_tick == 0) {
-      printf("\nEnd tick value is %d\n", tmp_elem->end_tick);
-      printf("\nMagic is %d\n", tmp_elem->magic);
-      ASSERT(tmp_elem != NULL);
-      ASSERT(tmp_elem->magic != NULL);
+      printf("End tick value is %d\n", tmp_elem->end_tick);
+      printf("Magic is %d\n", tmp_elem->magic);
       thread_unblock(tmp_elem);
     } else { 
-        printf("Decrementing by 1");
+        printf("Decrementing by 1\n");
         tmp_elem->end_tick -= 1;
     }
   }	
