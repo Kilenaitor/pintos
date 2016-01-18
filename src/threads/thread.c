@@ -28,10 +28,6 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
-/* List of processes that are set to be waiting.
- * Processes are added when they are put to sleep. */
-static struct list sleep_list;
-
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -96,7 +92,6 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -138,27 +133,6 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
-  
-  /* Iterate over sleepy threads to see if any need to be awoken */
-  struct list_elem *e;
-  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)) {
-    struct thread *tmp_elem = list_entry (e, struct thread, elem);
-    
-    printf("Current thread is: %s\n", tmp_elem->name);
-    ASSERT (tmp_elem->status == THREAD_BLOCKED);
-    
-    if(tmp_elem->end_tick > 0) {
-      tmp_elem->end_tick -= 1;
-    } else { 
-      printf("Remaining ticks: %d\n", tmp_elem->end_tick);
-      printf("Magic is %d\n", tmp_elem->magic);
-      printf("Calling unblock\n");
-      thread_unblock(tmp_elem);
-      printf("List size is %d\n", list_size(&sleep_list));
-      printf("Unblock was successful. Removing from list.\n");
-      printf("New list size is %d\n", list_size(&sleep_list));
-    }
-  }	
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -250,29 +224,7 @@ thread_block (void)
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  struct thread *t = thread_current ();
-  t->status = THREAD_BLOCKED;
-  
-  schedule ();
-}
-
-void 
-thread_sleep (void)
-{
-  ASSERT (!intr_context ());
-  ASSERT (intr_get_level () == INTR_OFF);
-
-  struct thread *t = thread_current (); //Grabbing current thread
-  t->status = THREAD_BLOCKED;
-  
-  if(t != idle_thread && t != initial_thread) {
-    
-//    printf("Thread ticks are: %d\n", t->end_tick);
-//    printf("Thread magic is %d\n", t->magic);
-    
-    list_push_back(&sleep_list, &t->elem); //Append it to list of sleepy threads
-  }
-  
+  thread_current ()->status = THREAD_BLOCKED;
   schedule ();
 }
 

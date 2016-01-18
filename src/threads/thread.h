@@ -100,9 +100,6 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-
-    unsigned end_tick;			/* Holds eventual timer tick count */
-
   };
 
 /* If false (default), use round-robin scheduler.
@@ -120,7 +117,6 @@ typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
-void thread_sleep (void);
 void thread_unblock (struct thread *);
 
 struct thread *thread_current (void);
