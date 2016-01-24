@@ -142,7 +142,7 @@ thread_tick (void)
   struct list_elem * e;
   for (e = list_begin(&sleep_list); e != list_end(&sleep_list);)
   {
-  		struct thread *curr_thread = list_entry (e, struct thread, elem);
+  		struct thread *curr_thread = list_entry (e, struct thread, sleep_elem);
       if (curr_thread->ticks_remain > 0) {
         curr_thread->ticks_remain--;
         e = list_next(e);
@@ -262,7 +262,7 @@ thread_sleep (void)
 
   struct thread *t = thread_current();
   
-  list_push_back (&sleep_list, &t->elem);
+  list_push_back (&sleep_list, &t->sleep_elem);
   t->status = THREAD_BLOCKED;
   
   ASSERT ( t->status == THREAD_BLOCKED );
