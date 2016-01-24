@@ -144,7 +144,7 @@ thread_tick (void)
   {
   		struct thread *curr_thread = list_entry (e, struct thread, elem);
       if (curr_thread->ticks_remain > 0) {
-        curr_thread->ticks--;
+        curr_thread->ticks_remain--;
         e = list_next(e)
       }
       else {
