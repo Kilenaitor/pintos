@@ -150,7 +150,7 @@ thread_tick (void)
       else {
         thread_unblock(curr_thread);
         e = list_next(e);
-        list_remove (&curr_thread->elem);
+        list_remove (&curr_thread->sleep_elem);
       }
   }
 
@@ -262,8 +262,7 @@ thread_sleep (void)
 
   struct thread *t = thread_current();
   
-  if (t != idle_thread) 
-    list_push_back (&sleep_list, &t->sleep_elem);
+  list_push_back (&sleep_list, &t->sleep_elem);
   t->status = THREAD_BLOCKED;
   
   ASSERT ( t->status == THREAD_BLOCKED );
