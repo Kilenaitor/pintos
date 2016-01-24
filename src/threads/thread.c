@@ -262,7 +262,7 @@ thread_sleep (void)
 
   struct thread *t = thread_current();
   
-  if (cur != idle_thread) 
+  if (t != idle_thread) 
     list_push_back (&sleep_list, &t->sleep_elem);
   t->status = THREAD_BLOCKED;
   
