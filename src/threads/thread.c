@@ -28,6 +28,10 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+/* List of sleeping processes. Processes are added to this list
+   when they are put to sleep. Removed when they are awakened. */
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +96,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -133,6 +138,21 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+  
+  struct list_elem * e;
+  for (e = list_begin(&sleep_list); e != list_end(&sleep_list);)
+  {
+  		struct thread *curr_thread = list_entry (e, struct thread, elem);
+      if (curr_thread->ticks_remain > 0) {
+        curr_thread->ticks--;
+        e = list_next(e)
+      }
+      else {
+        thread_unblock(curr_thread);
+        e = list_next(e);
+        list_remove (&sleep_list, curr_thread);
+      }
+  }
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -225,6 +245,28 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   thread_current ()->status = THREAD_BLOCKED;
+  schedule ();
+}
+
+/* Puts the current thread to sleep and places it in the 
+   sleeping list. It will not be awoken 
+
+   This function must be called with interrupts turned off.  It
+   is usually a better idea to use one of the synchronization
+   primitives in synch.h. */
+void
+thread_sleep (void) 
+{
+  ASSERT (!intr_context ());
+  ASSERT (intr_get_level () == INTR_OFF);
+
+  struct thread *t = thread_current();
+  
+  list_push_back (&sleep_list, &t->elem);
+  t->status = THREAD_BLOCKED;
+  
+  ASSERT ( t->status == THREAD_BLOCKED );
+  
   schedule ();
 }
 
