@@ -150,7 +150,7 @@ thread_tick (void)
       else {
         thread_unblock(curr_thread);
         e = list_next(e);
-        list_remove (&curr_threa->elem);
+        list_remove (&curr_thread->elem);
       }
   }
 
