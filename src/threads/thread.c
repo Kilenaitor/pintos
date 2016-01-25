@@ -139,17 +139,23 @@ thread_tick (void)
   else
     kernel_ticks++;
   
+  //Declare a list element that will be used for iterating over
   struct list_elem * e;
   for (e = list_begin(&sleep_list); e != list_end(&sleep_list);)
   {
+      // Grab the current thread using list_entry format
   		struct thread *curr_thread = list_entry (e, struct thread, sleep_elem);
       if (curr_thread->ticks_remain > 0) {
+        //If thread has ticks remaining, decrement
         curr_thread->ticks_remain--;
+        //Set e to the next element in the list before continuting
         e = list_next(e);
       }
       else {
+        //If thread ticks are at zero, unblock the thread
         thread_unblock(curr_thread);
         e = list_next(e);
+        //Set e to next element before removing from the sleep_list 
         list_remove (&curr_thread->sleep_elem);
       }
   }
@@ -265,7 +271,7 @@ thread_sleep (void)
   list_push_back (&sleep_list, &t->sleep_elem);
   t->status = THREAD_BLOCKED;
   
-  ASSERT ( t->status == THREAD_BLOCKED );
+  ASSERT (t->status == THREAD_BLOCKED);
   
   schedule ();
 }
