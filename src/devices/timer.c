@@ -100,7 +100,7 @@ timer_sleep (int64_t ticks)
     old_state = intr_disable (); 
     
     // Setting thread ticks to amount it should be asleep for
-    thread_current ()->ticks_remain = ticks;
+    thread_current ()->ticks_remain = ticks - 1;
     thread_sleep ();  
     
     //Resuming interrupts
