@@ -553,7 +553,7 @@ next_thread_to_run (void)
       int temp_priority = t->priority;
       
       for(e = list_begin (&ready_list); 
-        e != list_end (&ready_list); e = list_next (3))
+        e != list_end (&ready_list); e = list_next (e))
         {
           struct thread *comp = list_entry (e, struct thread, elem);
           if (comp->priority > temp_priority) 
