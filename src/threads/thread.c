@@ -402,17 +402,14 @@ thread_set_priority (int new_priority)
   ASSERT (new_priority >= PRI_MIN);
   
   int old_priority = thread_current ()->priority;
-  thread_current ()->orig_priority = new_priority;
+  
   if(old_priority > new_priority)
-  {
-    // Check for possible donors
-    // Set priority
-  }
+   {
+     
+   }
+  // If new priority is higher than the old
   else
-  {
-    // If new priority is higher than the old
-    thread_current ()->priority = new_priority;
-  }
+    thread_current ()->priority = new_priority; 
   
   intr_set_level (old_state);
 }
