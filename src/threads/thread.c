@@ -393,7 +393,21 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  ASSERT (new_priority <= PRI_MAX);
+  ASSERT (new_priority >= PRI_MIN);
+
+  int old_priority = thread_current ()->priority;
+  thread_current ()->orig_priority = new_priority;
+  if(old_priority > new_priority)
+  {
+    // Check for possible donors
+    // Set priority
+  }
+  else
+  {
+    // If new priority is higher than the old
+    thread_current ()->priority = new_priority;
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -520,6 +534,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+  list_init(&t->donor_list);
+  t->list_waiting = NULL;
+  t->orig_priority = priority;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

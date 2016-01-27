@@ -89,11 +89,11 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-	int64_t ticks_remain;				/* Used to awaken sleeping thread. */
+	  int64_t ticks_remain;				/* Used to awaken sleeping thread. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-	struct list_elem sleep_elem;		/* Sleep list element. */
+	  struct list_elem sleep_elem;		/* Sleep list element. */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -102,6 +102,12 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
+    /* Donor list and its list elem */
+    struct list donor_list; // List of donor threads
+    struct list_elem donor_elem; // Donor element (if thread is donating)
+    struct lock *lock_waiting; // Pointer to lock being waited for by thread (NULL if none)
+    int orig_priority;
   };
 
 /* If false (default), use round-robin scheduler.
