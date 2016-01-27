@@ -393,27 +393,34 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  /* Have to disable interrupts so that nothing
+  interrupts the priority-setting. */
+  enum intr_level old_state; 
+  old_state = intr_disable (); 
+  
   ASSERT (new_priority <= PRI_MAX);
   ASSERT (new_priority >= PRI_MIN);
-
+  
   int old_priority = thread_current ()->priority;
   thread_current ()->orig_priority = new_priority;
   thread_current ()->priority = new_priority;
   if(old_priority > new_priority)
-  {
-    // Check for possible donors
-    
-    int temp_priority = new_priority;
-    
-    for(struct list_elem *e = list_begin (&donor_list); 
-      e != list_end (&donor_list); e = list_next (e))
     {
-        struct thread *comp = list_entry (e, struct thread, elem);
-        if (comp->priority > temp_priority) 
+      // Check for possible donors
+      
+      int temp_priority = new_priority;
+      
+      for(struct list_elem *e = list_begin (&donor_list); 
+        e != list_end (&donor_list); e = list_next (e))
         {
-          temp_priority = comp->priority;
+            struct thread *comp = list_entry (e, struct thread, elem);
+            if (comp->priority > temp_priority) 
+              {
+                temp_priority = comp->priority;
+              }
         }
     }
+  intr_set_level (old_state);
 }
 
 /* Returns the current thread's priority. */
