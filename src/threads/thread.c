@@ -401,22 +401,22 @@ thread_set_priority (int new_priority)
   ASSERT (new_priority <= PRI_MAX);
   ASSERT (new_priority >= PRI_MIN);
   
-  int old_priority = thread_current ()->priority;
-  thread_current ()->orig_priority = new_priority;
-  thread_current ()->priority = new_priority;
+  struct thread* t = thread_current (); 
+  int old_priority = t->priority;
+  t->orig_priority = new_priority;
+  t->priority = new_priority;
   if(old_priority > new_priority)
     {
       // Check for possible donors
-      
-      int temp_priority = new_priority;
-      
-      for(struct list_elem *e = list_begin (&donor_list); 
-        e != list_end (&donor_list); e = list_next (e))
+
+      struct list_elem *e;
+      for(e = list_begin (&t->donor_list); 
+        e != list_end (&t->donor_list); e = list_next (e))
         {
             struct thread *comp = list_entry (e, struct thread, elem);
-            if (comp->priority > temp_priority) 
+            if (comp->priority > t->priority) 
               {
-                temp_priority = comp->priority;
+                t->priority = comp->priority;
               }
         }
     }
@@ -548,7 +548,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
   list_init(&t->donor_list);
-  t->list_waiting = NULL;
+  t->lock_waiting = NULL;
   t->orig_priority = priority;
 }
 
