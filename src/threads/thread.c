@@ -393,9 +393,14 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  /* Have to disable interrupts so that nothing
+  interrupts the priority-setting. */
+  enum intr_level old_state; 
+  old_state = intr_disable (); 
+  
   ASSERT (new_priority <= PRI_MAX);
   ASSERT (new_priority >= PRI_MIN);
-
+  
   int old_priority = thread_current ()->priority;
   thread_current ()->orig_priority = new_priority;
   if(old_priority > new_priority)
@@ -408,6 +413,8 @@ thread_set_priority (int new_priority)
     // If new priority is higher than the old
     thread_current ()->priority = new_priority;
   }
+  
+  intr_set_level (old_state);
 }
 
 /* Returns the current thread's priority. */
