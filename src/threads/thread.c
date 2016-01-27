@@ -398,16 +398,22 @@ thread_set_priority (int new_priority)
 
   int old_priority = thread_current ()->priority;
   thread_current ()->orig_priority = new_priority;
+  thread_current ()->priority = new_priority;
   if(old_priority > new_priority)
   {
     // Check for possible donors
-    // Set priority
-  }
-  else
-  {
-    // If new priority is higher than the old
-    thread_current ()->priority = new_priority;
-  }
+    
+    int temp_priority = new_priority;
+    
+    for(struct list_elem *e = list_begin (&donor_list); 
+      e != list_end (&donor_list); e = list_next (e))
+    {
+        struct thread *comp = list_entry (e, struct thread, elem);
+        if (comp->priority > temp_priority) 
+        {
+          temp_priority = comp->priority;
+        }
+    }
 }
 
 /* Returns the current thread's priority. */
