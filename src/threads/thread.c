@@ -401,6 +401,7 @@ thread_set_priority (int new_priority)
   ASSERT (new_priority <= PRI_MAX);
   ASSERT (new_priority >= PRI_MIN);
   
+  bool yield = false;
   struct thread* t = thread_current (); 
   int old_priority = t->priority;
   t->orig_priority = new_priority;
@@ -413,14 +414,28 @@ thread_set_priority (int new_priority)
       for(e = list_begin (&t->donor_list); 
         e != list_end (&t->donor_list); e = list_next (e))
         {
-            struct thread *comp = list_entry (e, struct thread, elem);
+            struct thread *comp = list_entry (e, struct thread, donor_elem);
             if (comp->priority > t->priority) 
               {
                 t->priority = comp->priority;
               }
         }
+
+      // Check if need to schedule 
+      for(e = list_begin (&ready_list); 
+        e != list_end (&ready_list); e = list_next (e))
+        {
+            struct thread *comp = list_entry (e, struct thread, elem);
+            if (comp->priority > t->priority) 
+              {
+                yield = true;
+                break;
+              }
+        }
     }
   intr_set_level (old_state);
+  if(yield)
+    thread_yield ();
 }
 
 /* Returns the current thread's priority. */
