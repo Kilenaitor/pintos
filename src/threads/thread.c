@@ -235,6 +235,11 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  if(t->priority > thread_current ()->priority)
+    {
+      thread_yield();
+    }
+
   return tid;
 }
 
@@ -414,23 +419,23 @@ thread_set_priority (int new_priority)
       for(e = list_begin (&t->donor_list); 
         e != list_end (&t->donor_list); e = list_next (e))
         {
-            struct thread *comp = list_entry (e, struct thread, donor_elem);
-            if (comp->priority > t->priority) 
-              {
-                t->priority = comp->priority;
-              }
+          struct thread *comp = list_entry (e, struct thread, donor_elem);
+          if (comp->priority > t->priority) 
+            {
+              t->priority = comp->priority;
+            }
         }
 
       // Check if need to schedule 
       for(e = list_begin (&ready_list); 
         e != list_end (&ready_list); e = list_next (e))
         {
-            struct thread *comp = list_entry (e, struct thread, elem);
-            if (comp->priority > t->priority) 
-              {
-                yield = true;
-                break;
-              }
+          struct thread *comp = list_entry (e, struct thread, elem);
+          if (comp->priority > t->priority) 
+            {
+              yield = true;
+              break;
+            }
         }
     }
   intr_set_level (old_state);
