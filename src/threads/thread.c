@@ -394,6 +394,27 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+/* Gets priority of given thread, recursively (nested donations)*/
+static int
+get_pri(struct thread *t, int depth)
+{
+  if(depth > 8)
+    return t->priority;
+  int max_priority = t->priority;
+  struct list_elem *e;
+  for(e = list_begin (&t->donor_list); 
+    e != list_end (&t->donor_list); e = list_next (e))
+    {
+      struct thread *comp = list_entry (e, struct thread, donor_elem);
+      int comp_pri = get_pri(comp, depth++);
+      if (comp_pri > max_priority) 
+        {
+          max_priority = comp_pri;
+        }
+    }
+  return max_priority;
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
