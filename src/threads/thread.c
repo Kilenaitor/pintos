@@ -398,7 +398,7 @@ thread_foreach (thread_action_func *func, void *aux)
 static int
 get_pri(struct thread *t, int depth)
 {
-  if(depth > 8)
+  if(depth > 8 || list_empty(&t->donor_list))
     return t->priority;
   int max_priority = t->priority;
   struct list_elem *e;
@@ -437,6 +437,7 @@ thread_set_priority (int new_priority)
       // Check for possible donors
 
       struct list_elem *e;
+      /*
       for(e = list_begin (&t->donor_list); 
         e != list_end (&t->donor_list); e = list_next (e))
         {
@@ -446,13 +447,15 @@ thread_set_priority (int new_priority)
               t->priority = comp->priority;
             }
         }
+      */
 
       // Check if need to schedule 
+      int t_pri = get_pri(t, 0);
       for(e = list_begin (&ready_list); 
         e != list_end (&ready_list); e = list_next (e))
         {
           struct thread *comp = list_entry (e, struct thread, elem);
-          if (comp->priority > t->priority) 
+          if (comp->priority > t_pri) 
             {
               yield = true;
               break;
@@ -468,7 +471,7 @@ thread_set_priority (int new_priority)
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
+  return get_pri(thread_current (), 0);
 }
 
 /* Sets the current thread's nice value to NICE. */
