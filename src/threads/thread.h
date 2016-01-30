@@ -106,7 +106,7 @@ struct thread
     /* Donor list and its list elem */
     struct list donor_list; // List of donor threads
     struct list_elem donor_elem; // Donor element (if thread is donating)
-    struct lock *lock_waiting; // Pointer to lock being waited for by thread (NULL if none)
+    struct lock *lock_waiting; // Pointer to lock being waited for or held by thread (NULL if none)
     int orig_priority;
   };
 

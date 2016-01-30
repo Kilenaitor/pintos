@@ -204,6 +204,7 @@ lock_init (struct lock *lock)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
+   int testvar = -1;
 void
 lock_acquire (struct lock *lock)
 {
@@ -215,9 +216,13 @@ lock_acquire (struct lock *lock)
   old_state = intr_disable ();
   if(lock->holder != NULL) // If there is a holder
     {
+      testvar = list_size (&lock->holder->donor_list);
       // Add to donors list in lock's holder thread
-      list_push_back (&lock->holder->donor_list, &thread_current ()->donor_elem);
-      
+      list_push_back (&lock->holder->donor_list, &thread_current ()->donor_elem);      
+      thread_current ()->lock_waiting = lock;
+      //int i = list_size(&lock->holder->donor_list);
+      //printf("lockacqure:%i\n", i);
+      testvar = list_size (&lock->holder->donor_list);
     }
   intr_set_level (old_state);
   sema_down (&lock->semaphore);
@@ -260,17 +265,32 @@ lock_release (struct lock *lock)
   if (!list_empty (&lock->holder->donor_list)) 
     {
       // Remove max priority thread from donor_list
+      
       struct list_elem *e = list_begin (&lock->holder->donor_list);
-      struct thread *max_pri_thread = list_entry (e, struct thread, donor_elem);
+      struct thread *max_pri_thread = NULL;
       for(; e != list_end (&lock->holder->donor_list); e = list_next (e))
         {
           struct thread *comp = list_entry (e, struct thread, donor_elem);
-          if (comp->priority > max_pri_thread->priority) 
+          if ((max_pri_thread == NULL || comp->priority > max_pri_thread->priority) && lock == comp->lock_waiting) 
             {
               max_pri_thread = comp;
             }
         }
-      list_remove (&max_pri_thread->donor_elem);
+      if(max_pri_thread != NULL)
+        {  
+          list_remove (&max_pri_thread->donor_elem);
+          max_pri_thread->lock_waiting = NULL;
+
+          // Add donors that are now not waiting to donor list of max_pri_thread
+          for(e = list_begin (&lock->holder->donor_list); e != list_end (&lock->holder->donor_list); e = list_next (e))
+            {
+              struct thread* t = list_entry (e, struct thread, donor_elem);
+              if (t->lock_waiting == lock) 
+                {
+                  list_push_back(&max_pri_thread->donor_list, list_remove (&t->donor_elem));
+                }
+            }
+        }
     }
   intr_set_level (old_state);
 
