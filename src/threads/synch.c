@@ -204,7 +204,6 @@ lock_init (struct lock *lock)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
-   int testvar = -1;
 void
 lock_acquire (struct lock *lock)
 {
@@ -216,13 +215,11 @@ lock_acquire (struct lock *lock)
   old_state = intr_disable ();
   if(lock->holder != NULL) // If there is a holder
     {
-      testvar = list_size (&lock->holder->donor_list);
       // Add to donors list in lock's holder thread
       list_push_back (&lock->holder->donor_list, &thread_current ()->donor_elem);      
       thread_current ()->lock_waiting = lock;
       //int i = list_size(&lock->holder->donor_list);
       //printf("lockacqure:%i\n", i);
-      testvar = list_size (&lock->holder->donor_list);
     }
   intr_set_level (old_state);
   sema_down (&lock->semaphore);

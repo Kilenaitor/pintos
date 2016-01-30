@@ -395,7 +395,7 @@ thread_foreach (thread_action_func *func, void *aux)
 }
 
 /* Gets priority of given thread, recursively (nested donations)*/
-int
+static int
 get_pri(struct thread *t, int depth)
 {
   if(depth > 8 || list_empty(&t->donor_list))
