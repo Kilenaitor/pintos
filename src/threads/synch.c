@@ -119,9 +119,10 @@ sema_up (struct semaphore *sema)
       struct list_elem *e = list_begin (&sema->waiters);
       struct thread *max_pri_thread = list_entry (e, struct thread, elem);
       ASSERT (max_pri_thread != NULL);
-      for(; e != list_end (&sema->waiters); e = list_next (e))
+      for(; e != list_end (&sema->waiters); )
         {
           struct thread *comp = list_entry (e, struct thread, elem);
+          e = list_next (e);
           ASSERT (comp != NULL);
           get_pri(comp, 0);
           get_pri(max_pri_thread, 0);
@@ -278,12 +279,17 @@ lock_release (struct lock *lock)
               max_pri_thread = comp;
             }
         }
+        
       if(max_pri_thread != NULL)
-        {  
+        {
+          ASSERT (max_pri_thread != NULL);
+          ASSERT (&max_pri_thread->donor_elem != NULL);
+          ASSERT (max_pri_thread->donor_elem.next != NULL);
+          ASSERT (max_pri_thread->donor_elem.prev != NULL);
           list_remove (&max_pri_thread->donor_elem);
           max_pri_thread->lock_waiting = NULL;
 
-          // Add donors that are now not waiting to donor list of max_pri_thread
+          // Remove relevant donors from donor list
           for(e = list_begin (&lock->holder->donor_list); e != list_end (&lock->holder->donor_list); )
             {
               struct thread* t = list_entry (e, struct thread, donor_elem);
@@ -291,7 +297,11 @@ lock_release (struct lock *lock)
               ASSERT (t != NULL);
               if (t->lock_waiting == lock) 
                 {
-                  list_push_back(&max_pri_thread->donor_list, list_remove (&t->donor_elem));
+                  list_remove (&t->donor_elem);
+                  /*
+                  struct list_elem* qwer =  list_remove (&t->donor_elem);
+                  list_push_back(&max_pri_thread->donor_list, qwer);
+                  */
                 }
             }
         }

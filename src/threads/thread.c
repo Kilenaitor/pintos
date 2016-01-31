@@ -409,7 +409,7 @@ get_pri(struct thread *t, int depth)
     {
       struct thread *comp = list_entry (e, struct thread, donor_elem);
       ASSERT (comp != NULL);
-      int comp_pri = get_pri(comp, depth++);
+      int comp_pri = get_pri (comp, depth++);
       if (comp_pri > max_priority) 
         {
           max_priority = comp_pri;
