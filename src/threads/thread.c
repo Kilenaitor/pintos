@@ -75,6 +75,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -235,7 +236,7 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  if(t->priority > thread_current ()->priority)
+  if(get_pri (t, 0) > get_pri(thread_current (), 0))
     {
       thread_yield();
     }
@@ -395,9 +396,10 @@ thread_foreach (thread_action_func *func, void *aux)
 }
 
 /* Gets priority of given thread, recursively (nested donations)*/
-static int
+int
 get_pri(struct thread *t, int depth)
 {
+  ASSERT (t != NULL);
   if(depth > 8 || list_empty(&t->donor_list))
     return t->priority;
   int max_priority = t->priority;
@@ -406,6 +408,7 @@ get_pri(struct thread *t, int depth)
     e != list_end (&t->donor_list); e = list_next (e))
     {
       struct thread *comp = list_entry (e, struct thread, donor_elem);
+      ASSERT (comp != NULL);
       int comp_pri = get_pri(comp, depth++);
       if (comp_pri > max_priority) 
         {
@@ -414,6 +417,7 @@ get_pri(struct thread *t, int depth)
     }
   return max_priority;
 }
+
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
@@ -624,16 +628,16 @@ next_thread_to_run (void)
       struct list_elem *e = list_front (&ready_list);
       struct thread *t = list_entry (e, struct thread, elem);
       
-      int temp_priority = t->priority;
+      int temp_priority = get_pri (t, 0);
       
       for(e = list_begin (&ready_list); 
         e != list_end (&ready_list); e = list_next (e))
         {
           struct thread *comp = list_entry (e, struct thread, elem);
-          if (comp->priority > temp_priority) 
+          if (get_pri (comp, 0) > temp_priority) 
             {
               t = comp;
-              temp_priority = t->priority;
+              temp_priority = get_pri (t, 0);
             }
         }
       list_remove(&t->elem);
