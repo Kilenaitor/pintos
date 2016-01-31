@@ -283,9 +283,6 @@ lock_release (struct lock *lock)
       if(max_pri_thread != NULL)
         {
           ASSERT (max_pri_thread != NULL);
-          ASSERT (&max_pri_thread->donor_elem != NULL);
-          ASSERT (max_pri_thread->donor_elem.next != NULL);
-          ASSERT (max_pri_thread->donor_elem.prev != NULL);
           list_remove (&max_pri_thread->donor_elem);
           max_pri_thread->lock_waiting = NULL;
 
@@ -298,9 +295,6 @@ lock_release (struct lock *lock)
               if (t->lock_waiting == lock) 
                 {
                   list_remove (&t->donor_elem);
-                  /*
-                  struct list_elem* qwer =  list_remove (&t->donor_elem);
-                  */
                   list_push_back(&max_pri_thread->donor_list, &t->donor_elem);
                 }
             }
