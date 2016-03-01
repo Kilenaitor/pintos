@@ -88,6 +88,11 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  // TODO: 
+  // temporarily do this "Suggested Order of Implementation"
+  while(true)
+  {
+  }
   return -1;
 }
 

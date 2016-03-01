@@ -108,6 +108,9 @@ struct thread
     struct list_elem donor_elem; // Donor element (if thread is donating)
     struct lock *lock_waiting; // Pointer to lock being waited for or held by thread (NULL if none)
     int orig_priority;
+
+    /* File Descriptor table */
+    struct file * fd_table[128]; // Limit to 128 files
   };
 
 /* If false (default), use round-robin scheduler.
