@@ -112,7 +112,7 @@ syscall_write (struct intr_frame *f)
 
   if(fd <= 0 || fd >= 128)
     {
-      sys_exit (1);
+      syscall_exit (1);
     }
   else if(fd == 1)
     {
