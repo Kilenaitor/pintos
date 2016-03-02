@@ -110,13 +110,14 @@ syscall_write (struct intr_frame *f)
       syscall_exit (1);
     }
 
-  if(fd <= 0 || fd >= 128)
+  if(fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
       syscall_exit (1);
     }
   else if(fd == 1)
     {
       // write to console
+      putbuf ((char *)buffer, size);
     }
   else
     {
