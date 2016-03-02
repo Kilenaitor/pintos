@@ -15,14 +15,32 @@ syscall_init (void)
 }
 
 // Checks if user pointer is 
-static bool valid_usr_ptr(uint32_t *pd, const void *uaddr)
+static bool 
+valid_usr_ptr(const void *uaddr)
 {
   // Checks if uaddr is below PHYS_BASE, above 0x08048000 (address given in directions), and not unmapped
-  if(is_user_vaddr (uaddr) && uaddr >= (void *)0x08048000 && pagedir_get_page (pd, uaddr) != NULL)
+  if(is_user_vaddr (uaddr) && uaddr >= (void *)0x08048000 && pagedir_get_page (thread_current ()->pagedir, uaddr) != NULL)
     {
       return true;
     }
   return false;
+}
+
+// Check if argument addresses are valid
+static bool
+valid_args(int num_args, struct intr_frame *f)
+{
+  void *ptr = f->esp;
+  int i = 0;
+  for(i = 0; i < num_args; i++)
+    {
+      ptr += 4;
+      if(!valid_usr_ptr (ptr))
+        {
+          return false;
+        }
+    }
+  return true;
 }
 
 static void
@@ -74,8 +92,37 @@ syscall_read (struct intr_frame *f UNUSED)
 }
 
 static void
-syscall_write (struct intr_frame *f UNUSED)
+syscall_write (struct intr_frame *f)
 {
+  if(!valid_args (3, f))
+    {
+      syscall_exit (1);
+    }
+
+  // Multiples of 4 since variable takes 4 bytes
+  int fd = *((int *)(f->esp + 4));
+  void *buffer = (void *)(f->esp + 8);
+  unsigned size = *((unsigned *)(f->esp + 12));
+
+  // Check buffer size
+  if(!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
+    {
+      syscall_exit (1);
+    }
+
+  if(fd <= 0 || fd >= 128)
+    {
+      sys_exit (1);
+    }
+  else if(fd == 1)
+    {
+      // write to console
+    }
+  else
+    {
+      // write to file
+    }
+
 }
 
 static void
@@ -99,80 +146,80 @@ syscall_handler (struct intr_frame *f)
   // Check if esp is valid
   int *syscall_num = f->esp;
 
-  if(!valid_usr_ptr(thread_current ()->pagedir, f->esp))
+  if(!valid_usr_ptr (f->esp))
     {
-      syscall_exit(-1);
+      syscall_exit (1);
     }
   switch (*syscall_num)
     {
       case SYS_HALT:
         {
-          syscall_halt(f);
+          syscall_halt (f);
           break;
         }
       case SYS_EXIT:
         {
-          syscall_exit(0);
+          syscall_exit (0);
           break;
         }
       case SYS_EXEC:
         {
-          syscall_exec(f);
+          syscall_exec (f);
           break;
         }
       case SYS_WAIT:
         {
-          syscall_wait(f);
+          syscall_wait (f);
           break;
         }
       case SYS_CREATE:
         {
-          syscall_create(f);
+          syscall_create (f);
           break;
         }
       case SYS_REMOVE:
         {
-          syscall_remove(f);
+          syscall_remove (f);
           break;
         }
       case SYS_OPEN:
         {
-          syscall_open(f);
+          syscall_open (f);
           break;
         }
       case SYS_FILESIZE:
         {
-          syscall_filesize(f);
+          syscall_filesize (f);
           break;
         }
       case SYS_READ:
         {
-          syscall_read(f);
+          syscall_read (f);
           break;
         }
       case SYS_WRITE:
         {
-          syscall_write(f);
+          syscall_write (f);
           break;
         }
       case SYS_SEEK:
         {
-          syscall_seek(f);
+          syscall_seek (f);
           break;
         }
       case SYS_TELL:
         {
-          syscall_tell(f);
+          syscall_tell (f);
           break;
         }
       case SYS_CLOSE:
         {
-          syscall_close(f);
+          syscall_close (f);
           break;
         }
       default:
         {
-          syscall_exit(-1);
+          syscall_exit (1);
           break;
         }
     }
