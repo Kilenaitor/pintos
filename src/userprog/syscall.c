@@ -67,7 +67,8 @@ static void
 syscall_exec (struct intr_frame *f)
 {
   thread_current ()->has_child = 0;
-  int pid = process_execute ((char *)(f->esp + 4), thread_current ()); 
+  int pid = process_execute ((char *)(f->esp + 4)); 
+  
 }
 
 static void
@@ -76,18 +77,61 @@ syscall_wait (struct intr_frame *f UNUSED)
 }
 
 static void
-syscall_create (struct intr_frame *f UNUSED)
+syscall_create (struct intr_frame *f)
 {
+  char* file_name = (char *)(f->esp + 4);
+  int file_size = *(int*)(f->esp + 8);
+  
+  if (!valid_user_pointer (thread_current ()->pagedir, filename))
+    {
+      sys_exit(1);
+    }
+  bool success = filesys_create(file_name, file_size);
+  f->eax = success;
 }
 
 static void
-syscall_remove (struct intr_frame *f UNUSED)
+syscall_remove (struct intr_frame *f)
 {
+  char* file = (char *)(f->esp + 4);
+  bool ret = filesys_remove (file);
+  f->eax = ret;
 }
 
 static void
 syscall_open (struct intr_frame *f UNUSED)
 {
+  char* file_name = (char *)(f->esp + 4);
+  if (!valid_user_pointer (thread_current ()->pagedir, file_name))
+    {
+      sys_exit(1);
+    }
+  
+  struct file* open_file = filesys_open (file_name);
+  if(!open_file)
+    {
+      f->eax = -1;
+    }
+  else
+    {
+      int i;
+      for (i = 2; i < 128; i++)
+        {
+          // Loop is to 128 because that is the size of the fd_table
+          // Finds the first value in the table that is not NULL
+          // Which is the first spot available to set the fd
+          if (thread_current ()->fd_table[i] == NULL)
+            break;
+        }
+      if (i == 128)
+        f->eax = -1;
+      else 
+        { 
+          thread_current ()->fd_table[i] = open_file;
+          f->eax = i;
+        }
+    }
+
 }
 
 static void
