@@ -5,6 +5,7 @@
 #include "threads/thread.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+#include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -107,21 +108,44 @@ syscall_write (struct intr_frame *f)
   // Check buffer size
   if(!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
-      syscall_exit (1);
+      f->eax = -1; // Return -1 for error
+      //syscall_exit (1);
     }
 
   if(fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
-      syscall_exit (1);
+      f->eax = -1; // Return -1 for error
+      //syscall_exit (1);
     }
   else if(fd == 1)
     {
       // write to console
-      putbuf ((char *)buffer, size);
+      
+      // If size is bigger than a few hunder bytes, break it up into chunks (chose 512)
+      unsigned size_remaining = size;
+      char *cbuff = buffer;
+      while(size_remaining > 512)
+        {
+          putbuf (cbuff, 512); // Write 512 bytes to buffer
+          size_remaining -= 512; // Subtract 512 from remaining
+          cbuff += 512; // Add 512 to address of where to write from in next iteration
+        }
+      putbuf (cbuff, size_remaining);
     }
   else
     {
       // write to file
+      
+      // Check if index at fd is a null pointer
+      if(thread_current ()->fd_table[fd] == NULL)
+        {
+          f->eax = -1; // Return -1 for error
+          syscall_exit(1);
+        }
+      else
+        {
+          f->eax = file_write(thread_current ()->fd_table[fd], buffer, size); // Return the value
+        }
     }
 
 }

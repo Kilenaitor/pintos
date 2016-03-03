@@ -598,6 +598,13 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->donor_list);
   t->lock_waiting = NULL;
   t->orig_priority = priority;
+
+  // Initialize file descriptors to null (null means not open)
+  int i;
+  for(i = 0; i < 128; i++)
+    {
+      t->fd_table[i] = NULL;
+    }
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
