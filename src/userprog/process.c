@@ -100,9 +100,19 @@ process_wait (tid_t child_tid UNUSED)
 void
 process_exit (void)
 {
+  enum intr_level old_state; 
+  old_state = intr_disable (); 
+  
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  
+  if (cur->parent != NULL)
+    {
+      cur->parent->child_ret = cur->child_ret;
+    }
 
+  printf ("%s: exit(%i)\n", cur->name, cur->child_ret);	
+  
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -119,6 +129,8 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+  intr_set_level (old_state); 
 }
 
 /* Sets up the CPU for running user code in the current

@@ -8,6 +8,7 @@
 #include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
+struct lock file_lock;
 
 void
 syscall_init (void) 
@@ -19,8 +20,12 @@ syscall_init (void)
 static bool 
 valid_usr_ptr(const void *uaddr)
 {
-  // Checks if uaddr is below PHYS_BASE, above 0x08048000 (address given in directions), and not unmapped
-  if(is_user_vaddr (uaddr) && uaddr >= (void *)0x08048000 && pagedir_get_page (thread_current ()->pagedir, uaddr) != NULL)
+  // Checks if uaddr is below PHYS_BASE, 
+  // above 0x08048000 (address given in directions), 
+  // and not unmapped
+  if (is_user_vaddr (uaddr) 
+      && uaddr >= (void *)0x08048000 
+      && pagedir_get_page (thread_current ()->pagedir, uaddr) != NULL)
     {
       return true;
     }
@@ -33,10 +38,10 @@ valid_args(int num_args, struct intr_frame *f)
 {
   void *ptr = f->esp;
   int i = 0;
-  for(i = 0; i < num_args; i++)
+  for (i = 0; i < num_args; i++)
     {
       ptr += 4;
-      if(!valid_usr_ptr (ptr))
+      if (!valid_usr_ptr (ptr))
         {
           return false;
         }
@@ -47,6 +52,7 @@ valid_args(int num_args, struct intr_frame *f)
 static void
 syscall_halt (struct intr_frame *f UNUSED)
 {
+  shutdown_power_off ();
 }
 
 
@@ -58,8 +64,10 @@ syscall_exit (int status UNUSED)
 }
 
 static void
-syscall_exec (struct intr_frame *f UNUSED)
+syscall_exec (struct intr_frame *f)
 {
+  thread_current ()->has_child = 0;
+  int pid = process_execute ((char *)(f->esp + 4), thread_current ()); 
 }
 
 static void
@@ -95,7 +103,7 @@ syscall_read (struct intr_frame *f UNUSED)
 static void
 syscall_write (struct intr_frame *f)
 {
-  if(!valid_args (3, f))
+  if (!valid_args (3, f))
     {
       syscall_exit (1);
     }
@@ -106,29 +114,30 @@ syscall_write (struct intr_frame *f)
   unsigned size = *((unsigned *)(f->esp + 12));
 
   // Check buffer size
-  if(!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
+  if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
       f->eax = -1; // Return -1 for error
       //syscall_exit (1);
     }
 
-  if(fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
+  if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
       f->eax = -1; // Return -1 for error
       //syscall_exit (1);
     }
-  else if(fd == 1)
+  else if (fd == 1)
     {
       // write to console
       
-      // If size is bigger than a few hunder bytes, break it up into chunks (chose 512)
+      // If size is bigger than a few hunder bytes, 
+      // break it up into chunks (chose 512)
       unsigned size_remaining = size;
       char *cbuff = buffer;
       while(size_remaining > 512)
         {
           putbuf (cbuff, 512); // Write 512 bytes to buffer
           size_remaining -= 512; // Subtract 512 from remaining
-          cbuff += 512; // Add 512 to address of where to write from in next iteration
+          cbuff += 512; // Add 512 to address of where to write
         }
       putbuf (cbuff, size_remaining);
     }
@@ -137,14 +146,17 @@ syscall_write (struct intr_frame *f)
       // write to file
       
       // Check if index at fd is a null pointer
-      if(thread_current ()->fd_table[fd] == NULL)
+      if (thread_current ()->fd_table[fd] == NULL)
         {
           f->eax = -1; // Return -1 for error
-          syscall_exit(1);
+          // syscall_exit(1);
         }
       else
         {
-          f->eax = file_write(thread_current ()->fd_table[fd], buffer, size); // Return the value
+          lock_acquire(&file_lock);
+          f->eax = file_write(thread_current ()->fd_table[fd], buffer, size); 
+          lock_release(&file_lock);
+          // Return the value
         }
     }
 

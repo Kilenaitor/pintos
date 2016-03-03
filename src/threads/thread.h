@@ -111,6 +111,12 @@ struct thread
 
     /* File Descriptor table */
     struct file * fd_table[128]; // Limit to 128 files
+
+    /* Parent thread and the child return value */
+    struct thread* parent;
+    int child_ret;
+    int has_child;
+
   };
 
 /* If false (default), use round-robin scheduler.

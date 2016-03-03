@@ -104,6 +104,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  initial_thread->parent = NULL;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -145,7 +146,7 @@ thread_tick (void)
   for (e = list_begin (&sleep_list); e != list_end (&sleep_list);)
     {
       // Grab the current thread using list_entry format
-  		struct thread *curr_thread = list_entry (e, struct thread, sleep_elem);
+      struct thread *curr_thread = list_entry (e, struct thread, sleep_elem);
       if (curr_thread->ticks_remain > 0) {
         //If thread has ticks remaining, decrement
         curr_thread->ticks_remain--;
@@ -598,6 +599,7 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->donor_list);
   t->lock_waiting = NULL;
   t->orig_priority = priority;
+  t->parent = NULL;
 
   // Initialize file descriptors to null (null means not open)
   int i;
