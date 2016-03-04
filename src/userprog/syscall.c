@@ -89,7 +89,7 @@ syscall_create (struct intr_frame *f)
   if(!valid_args (2, f))
     {
       f->eax = -1;
-      return;
+      syscall_exit (1);
     }
   char* file_name = (char *)(f->esp + 4);
   int file_size = *(int*)(f->esp + 8);
@@ -97,8 +97,7 @@ syscall_create (struct intr_frame *f)
   if (!valid_usr_ptr (file_name))
     {
       f->eax = false;
-      // syscall_exit(1);
-      return;
+      syscall_exit (1);
     }
   bool success = filesys_create(file_name, file_size);
   f->eax = success;
@@ -110,14 +109,13 @@ syscall_remove (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = false;
-      return;
+      syscall_exit (1);
     }
   char* file = (char *)(f->esp + 4);
   if (!valid_usr_ptr (file))
     {
       f->eax = false;
-      // syscall_exit(1);
-      return;
+      syscall_exit(1);
     }
   bool ret = filesys_remove (file);
   f->eax = ret;
@@ -129,20 +127,18 @@ syscall_open (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = false;
-      return;
+      syscall_exit(1);
     }
   char* file_name = (char *)(f->esp + 4);
   if (!valid_usr_ptr (file_name)) // Check argument
     {
-      // syscall_exit(1);
-      return;
+      syscall_exit(1);
     }
   
   struct file* open_file = filesys_open (file_name);
   if(!open_file)
     {
       f->eax = -1;
-      return;
     }
   else
     {
@@ -177,8 +173,7 @@ syscall_read (struct intr_frame *f UNUSED)
   if (!valid_args (3, f))
     {
       f->eax = -1;
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
 
   // Multiples of 4 since variable takes 4 bytes
@@ -190,8 +185,7 @@ syscall_read (struct intr_frame *f UNUSED)
   if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
       f->eax = -1; // Return -1 for error
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
 
   if (fd < 0 || fd >= 128 || fd == 1) // Since we only have file descriptors 0-127
@@ -240,8 +234,7 @@ syscall_write (struct intr_frame *f)
   if (!valid_args (3, f))
     {
       f->eax = -1;
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
 
   // Multiples of 4 since variable takes 4 bytes
@@ -253,8 +246,7 @@ syscall_write (struct intr_frame *f)
   if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
       f->eax = -1; // Return -1 for error
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
 
   if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
