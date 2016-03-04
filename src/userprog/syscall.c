@@ -123,7 +123,7 @@ syscall_remove (struct intr_frame *f)
 }
 
 static void
-syscall_open (struct intr_frame *f UNUSED)
+syscall_open (struct intr_frame *f)
 {
   if(!valid_args (1, f))
     {
