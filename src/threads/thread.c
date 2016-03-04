@@ -600,6 +600,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->lock_waiting = NULL;
   t->orig_priority = priority;
   t->parent = NULL;
+  t->pagedir = NULL;
 
   // Initialize file descriptors to null (null means not open)
   int i;
