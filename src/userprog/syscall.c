@@ -6,6 +6,10 @@
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
 #include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "devices/shutdown.h"
+#include "userprog/process.h"
+#include "threads/synch.h"
 
 static void syscall_handler (struct intr_frame *);
 struct lock file_lock;
@@ -82,9 +86,9 @@ syscall_create (struct intr_frame *f)
   char* file_name = (char *)(f->esp + 4);
   int file_size = *(int*)(f->esp + 8);
   
-  if (!valid_user_pointer (thread_current ()->pagedir, filename))
+  if (!valid_usr_ptr (file_name))
     {
-      sys_exit(1);
+      syscall_exit(1);
     }
   bool success = filesys_create(file_name, file_size);
   f->eax = success;
@@ -102,9 +106,9 @@ static void
 syscall_open (struct intr_frame *f UNUSED)
 {
   char* file_name = (char *)(f->esp + 4);
-  if (!valid_user_pointer (thread_current ()->pagedir, file_name))
+  if (!valid_usr_ptr (file_name))
     {
-      sys_exit(1);
+      syscall_exit(1);
     }
   
   struct file* open_file = filesys_open (file_name);
