@@ -10,6 +10,7 @@
 #include "devices/shutdown.h"
 #include "userprog/process.h"
 #include "threads/synch.h"
+#include "devices/input.h"
 
 static void syscall_handler (struct intr_frame *);
 struct lock file_lock;
@@ -173,6 +174,64 @@ syscall_filesize (struct intr_frame *f UNUSED)
 static void
 syscall_read (struct intr_frame *f UNUSED)
 {
+  if (!valid_args (3, f))
+    {
+      f->eax = -1;
+      //syscall_exit (1);
+      return;
+    }
+
+  // Multiples of 4 since variable takes 4 bytes
+  int fd = *((int *)(f->esp + 4));
+  void *buffer = (void *)(f->esp + 8);
+  unsigned size = *((unsigned *)(f->esp + 12));
+
+  // Check buffer size
+  if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
+    {
+      f->eax = -1; // Return -1 for error
+      //syscall_exit (1);
+      return;
+    }
+
+  if (fd < 0 || fd >= 128 || fd == 1) // Since we only have file descriptors 0-127
+    {
+      // Also, fd == 1 => error, since its STOUT_FILENO
+      f->eax = -1; // Return -1 for error
+      //syscall_exit (1);
+      return;
+    }
+  else if (fd == 0)
+    {
+      // read from console
+      char * cbuff = buffer;
+      unsigned i; // Unsigned so that we're comparing unsigned types
+      for(i = 0; i < size; i++)
+        {
+          cbuff[i] = input_getc();
+        }
+      f->eax = size;
+    }
+  else
+    {
+      // read from file
+      
+      // Check if index at fd is a null pointer
+      if (thread_current ()->fd_table[fd] == NULL)
+        {
+          f->eax = -1; // Return -1 for error
+          // syscall_exit(1);
+          return;
+        }
+      else
+        {
+          lock_acquire(&file_lock);
+          f->eax = file_read(thread_current ()->fd_table[fd], buffer, size); 
+          lock_release(&file_lock);
+          // Return the value
+        }
+    }
+
 }
 
 static void
@@ -200,6 +259,7 @@ syscall_write (struct intr_frame *f)
 
   if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
+      // Also there is an error if fd == 0, since its STIN_FILENO
       f->eax = -1; // Return -1 for error
       //syscall_exit (1);
       return;
