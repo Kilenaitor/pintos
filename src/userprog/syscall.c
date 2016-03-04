@@ -68,10 +68,12 @@ syscall_exit (int status UNUSED)
 }
 
 static void
-syscall_exec (struct intr_frame *f)
+syscall_exec (struct intr_frame *f UNUSED)
 {
+  /*
   thread_current ()->has_child = 0;
   int pid = process_execute ((char *)(f->esp + 4)); 
+  */
   
 }
 
@@ -83,12 +85,19 @@ syscall_wait (struct intr_frame *f UNUSED)
 static void
 syscall_create (struct intr_frame *f)
 {
+  if(!valid_args (2, f))
+    {
+      f->eax = -1;
+      return;
+    }
   char* file_name = (char *)(f->esp + 4);
   int file_size = *(int*)(f->esp + 8);
   
   if (!valid_usr_ptr (file_name))
     {
-      syscall_exit(1);
+      f->eax = false;
+      // syscall_exit(1);
+      return;
     }
   bool success = filesys_create(file_name, file_size);
   f->eax = success;
@@ -97,7 +106,18 @@ syscall_create (struct intr_frame *f)
 static void
 syscall_remove (struct intr_frame *f)
 {
+  if(!valid_args (1, f))
+    {
+      f->eax = false;
+      return;
+    }
   char* file = (char *)(f->esp + 4);
+  if (!valid_usr_ptr (file))
+    {
+      f->eax = false;
+      // syscall_exit(1);
+      return;
+    }
   bool ret = filesys_remove (file);
   f->eax = ret;
 }
@@ -105,16 +125,23 @@ syscall_remove (struct intr_frame *f)
 static void
 syscall_open (struct intr_frame *f UNUSED)
 {
-  char* file_name = (char *)(f->esp + 4);
-  if (!valid_usr_ptr (file_name))
+  if(!valid_args (1, f))
     {
-      syscall_exit(1);
+      f->eax = false;
+      return;
+    }
+  char* file_name = (char *)(f->esp + 4);
+  if (!valid_usr_ptr (file_name)) // Check argument
+    {
+      // syscall_exit(1);
+      return;
     }
   
   struct file* open_file = filesys_open (file_name);
   if(!open_file)
     {
       f->eax = -1;
+      return;
     }
   else
     {
@@ -153,7 +180,9 @@ syscall_write (struct intr_frame *f)
 {
   if (!valid_args (3, f))
     {
-      syscall_exit (1);
+      f->eax = -1;
+      //syscall_exit (1);
+      return;
     }
 
   // Multiples of 4 since variable takes 4 bytes
@@ -166,12 +195,14 @@ syscall_write (struct intr_frame *f)
     {
       f->eax = -1; // Return -1 for error
       //syscall_exit (1);
+      return;
     }
 
   if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
       f->eax = -1; // Return -1 for error
       //syscall_exit (1);
+      return;
     }
   else if (fd == 1)
     {
@@ -198,6 +229,7 @@ syscall_write (struct intr_frame *f)
         {
           f->eax = -1; // Return -1 for error
           // syscall_exit(1);
+          return;
         }
       else
         {
