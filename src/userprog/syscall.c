@@ -18,6 +18,7 @@ struct lock file_lock;
 void
 syscall_init (void) 
 {
+  lock_init (&file_lock);
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -53,6 +54,10 @@ valid_args(int num_args, struct intr_frame *f)
     }
   return true;
 }
+
+// In general, when there is an error here is how it is handled
+// 1. Invalid address: syscall_exit (1) (directions say to do this)
+// 2. Other: return
 
 static void
 syscall_halt (struct intr_frame *f UNUSED)
