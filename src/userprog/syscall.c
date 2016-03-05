@@ -55,9 +55,7 @@ valid_args(int num_args, struct intr_frame *f)
   return true;
 }
 
-// In general, when there is an error here is how it is handled
-// 1. Invalid address: syscall_exit (1) (directions say to do this)
-// 2. Other: return
+// In general, when there is an error it is handled by syscall_exit (1)
 
 static void
 syscall_halt (struct intr_frame *f UNUSED)
@@ -175,8 +173,28 @@ syscall_open (struct intr_frame *f)
 }
 
 static void
-syscall_filesize (struct intr_frame *f UNUSED)
+syscall_filesize (struct intr_frame *f)
 {
+  if(!valid_args (1, f))
+    {
+      f->eax = -1;
+      syscall_exit (1);
+    }
+
+  int fd = *((int *)(f->esp + 4));
+  struct file* fil = thread_current ()->fd_table[fd];
+  
+  // Check if fd is a valid index
+  // Note: fd[0] and fd[1] should be NULL
+  if( fd < 0 || fd >= 128 || fil == NULL)
+    {
+      f->eax = -1;
+      syscall_exit (1);
+    }
+  
+  lock_acquire (&file_lock);
+  f->eax = file_length (fil);
+  lock_release (&file_lock);
 }
 
 static void
@@ -204,8 +222,7 @@ syscall_read (struct intr_frame *f UNUSED)
     {
       // Also, fd == 1 => error, since its STOUT_FILENO
       f->eax = -1; // Return -1 for error
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
   else if (fd == 0)
     {
@@ -226,8 +243,7 @@ syscall_read (struct intr_frame *f UNUSED)
       if (thread_current ()->fd_table[fd] == NULL)
         {
           f->eax = -1; // Return -1 for error
-          // syscall_exit(1);
-          return;
+          syscall_exit(1);
         }
       else
         {
@@ -265,8 +281,7 @@ syscall_write (struct intr_frame *f)
     {
       // Also there is an error if fd == 0, since its STIN_FILENO
       f->eax = -1; // Return -1 for error
-      //syscall_exit (1);
-      return;
+      syscall_exit (1);
     }
   else if (fd == 1)
     {
@@ -292,8 +307,7 @@ syscall_write (struct intr_frame *f)
       if (thread_current ()->fd_table[fd] == NULL)
         {
           f->eax = -1; // Return -1 for error
-          // syscall_exit(1);
-          return;
+          syscall_exit(1);
         }
       else
         {
