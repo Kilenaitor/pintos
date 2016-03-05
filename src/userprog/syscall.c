@@ -104,7 +104,9 @@ syscall_create (struct intr_frame *f)
       f->eax = false;
       syscall_exit (1);
     }
+  lock_acquire (&file_lock);
   bool success = filesys_create(file_name, file_size);
+  lock_release (&file_lock);
   f->eax = success;
 }
 
@@ -122,7 +124,9 @@ syscall_remove (struct intr_frame *f)
       f->eax = false;
       syscall_exit(1);
     }
+  lock_acquire (&file_lock);
   bool ret = filesys_remove (file);
+  lock_release (&file_lock);
   f->eax = ret;
 }
 
@@ -140,7 +144,10 @@ syscall_open (struct intr_frame *f)
       syscall_exit(1);
     }
   
+  lock_acquire (&file_lock);
   struct file* open_file = filesys_open (file_name);
+  lock_release (&file_lock);
+
   if(!open_file)
     {
       f->eax = -1;
