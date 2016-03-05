@@ -116,14 +116,14 @@ syscall_remove (struct intr_frame *f)
       f->eax = false;
       syscall_exit (1);
     }
-  char* file = (char *)(f->esp + 4);
-  if (!valid_usr_ptr (file))
+  char* file_name = (char *)(f->esp + 4);
+  if (!valid_usr_ptr (file_name))
     {
       f->eax = false;
       syscall_exit(1);
     }
   lock_acquire (&file_lock);
-  bool ret = filesys_remove (file);
+  bool ret = filesys_remove (file_name);
   lock_release (&file_lock);
   f->eax = ret;
 }
@@ -182,23 +182,23 @@ syscall_filesize (struct intr_frame *f)
     }
 
   int fd = *((int *)(f->esp + 4));
-  struct file* fil = thread_current ()->fd_table[fd];
+  struct file* file_ptr = thread_current ()->fd_table[fd];
   
   // Check if fd is a valid index
   // Note: fd[0] and fd[1] should be NULL
-  if( fd < 0 || fd >= 128 || fil == NULL)
+  if( fd < 0 || fd >= 128 || file_ptr == NULL)
     {
       f->eax = -1;
       syscall_exit (1);
     }
   
   lock_acquire (&file_lock);
-  f->eax = file_length (fil);
+  f->eax = file_length (file_ptr);
   lock_release (&file_lock);
 }
 
 static void
-syscall_read (struct intr_frame *f UNUSED)
+syscall_read (struct intr_frame *f)
 {
   if (!valid_args (3, f))
     {
@@ -321,18 +321,75 @@ syscall_write (struct intr_frame *f)
 }
 
 static void
-syscall_seek (struct intr_frame *f UNUSED)
+syscall_seek (struct intr_frame *f)
 {
+  if(!valid_args (2, f))
+    {
+      syscall_exit (1);
+    }
+
+  int fd = *((int *)(f->esp + 4));
+  unsigned position = *((unsigned *)(f->esp + 8));
+  
+  // Check if fd is a valid index
+  // Note: fd[0] and fd[1] should be NULL
+  if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
+    {
+      syscall_exit (1);
+    }
+  struct file *file_ptr = thread_current ()->fd_table[fd];
+  
+  lock_acquire (&file_lock);
+  file_seek(file_ptr, position);
+  lock_release (&file_lock);
 }
 
 static void
-syscall_tell (struct intr_frame *f UNUSED)
+syscall_tell (struct intr_frame *f)
 {
+  if(!valid_args (1, f))
+    {
+      f->eax = 0;
+      syscall_exit (1);
+    }
+
+  int fd = *((int *)(f->esp + 4));
+  
+  // Check if fd is a valid index
+  // Note: fd[0] and fd[1] should be NULL
+  if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
+    {
+      f->eax = 0;
+      syscall_exit (1);
+    }
+  struct file *file_ptr = thread_current ()->fd_table[fd];
+  
+  lock_acquire (&file_lock);
+  f->eax = file_tell(file_ptr);
+  lock_release (&file_lock);
 }
 
 static void
 syscall_close (struct intr_frame *f UNUSED)
 {
+  if(!valid_args (1, f))
+    {
+      syscall_exit (1);
+    }
+
+  int fd = *((int *)(f->esp + 4));
+  
+  // Check if fd is a valid index
+  // Note: fd[0] and fd[1] should be NULL
+  if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
+    {
+      syscall_exit (1);
+    }
+  struct file *file_ptr = thread_current ()->fd_table[fd];
+  
+  lock_acquire (&file_lock);
+  file_close(file_ptr);
+  lock_release (&file_lock);
 }
 
 static void
