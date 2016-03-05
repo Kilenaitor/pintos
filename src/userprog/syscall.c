@@ -370,7 +370,7 @@ syscall_tell (struct intr_frame *f)
 }
 
 static void
-syscall_close (struct intr_frame *f UNUSED)
+syscall_close (struct intr_frame *f)
 {
   if(!valid_args (1, f))
     {
