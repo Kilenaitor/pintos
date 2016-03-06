@@ -45,6 +45,13 @@ process_execute (const char *file_name)
       palloc_free_page (fn_copy); 
       return tid;
     }
+
+  sema_down (&thread_current ()->load_sema);
+  // If not successfully loaded
+  if (thread_current ()->load_success == false)
+    {
+    }
+
   return tid;
 }
 

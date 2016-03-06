@@ -470,6 +470,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+  list_init (&t->child_list);
+  sema_init (&t->load_sema, 0);
 
   int i;
   for(i = 0; i <128; i++)

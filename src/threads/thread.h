@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -23,6 +24,14 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
+
+struct child_process
+{
+  tid_t tid;
+  int ret_val;
+  bool exited;
+  struct list_elem elem; 
+}
 
 /* A kernel thread or user process.
 
@@ -102,6 +111,9 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     struct file *fd_table[128]; // Limit to 128 files open
+    struct semaphore load_sema;
+    bool load_success;
+    struct list child_list;
   };
 
 /* If false (default), use round-robin scheduler.
