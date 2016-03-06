@@ -443,6 +443,22 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   return true;
 }
 
+static void *
+push (uint8_t *kpage, size_t *offset, const void *buf, size_t size)
+{
+  size_t padsize = ROUND_UP (size, sizeof (uint32_t));
+
+  if (*offset < padsize)
+    {
+      return NULL;
+    }
+
+  *offset -= padsize;
+
+  memcpy (kpage + *offset + (padsize - size), buf, size);
+  return kpage + *offset + (padsize - size);
+}
+
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
