@@ -89,11 +89,9 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-	  int64_t ticks_remain;				/* Used to awaken sleeping thread. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-	  struct list_elem sleep_elem;		/* Sleep list element. */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -103,20 +101,7 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
-    /* Donor list and its list elem */
-    struct list donor_list; // List of donor threads
-    struct list_elem donor_elem; // Donor element (if thread is donating)
-    struct lock *lock_waiting; // Pointer to lock being waited for or held by thread (NULL if none)
-    int orig_priority;
-
-    /* File Descriptor table */
-    struct file * fd_table[128]; // Limit to 128 files
-
-    /* Parent thread and the child return value */
-    struct thread* parent;
-    int child_ret;
-    int has_child;
-
+    struct file *fd_table[128]; // Limit to 128 files open
   };
 
 /* If false (default), use round-robin scheduler.
@@ -134,7 +119,6 @@ typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
-void thread_sleep (void);
 void thread_unblock (struct thread *);
 
 struct thread *thread_current (void);
@@ -147,8 +131,6 @@ void thread_yield (void);
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
-
-int get_pri(struct thread *t, int depth);
 
 int thread_get_priority (void);
 void thread_set_priority (int);

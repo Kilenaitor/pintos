@@ -28,10 +28,6 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
-/* List of sleeping processes. Processes are added to this list
-   when they are put to sleep. Removed when they are awakened. */
-static struct list sleep_list;
-
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -75,7 +71,6 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
-
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -97,14 +92,12 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-  initial_thread->parent = NULL;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -140,27 +133,6 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
-  
-  //Declare a list element that will be used for iterating over
-  struct list_elem * e;
-  for (e = list_begin (&sleep_list); e != list_end (&sleep_list);)
-    {
-      // Grab the current thread using list_entry format
-      struct thread *curr_thread = list_entry (e, struct thread, sleep_elem);
-      if (curr_thread->ticks_remain > 0) {
-        //If thread has ticks remaining, decrement
-        curr_thread->ticks_remain--;
-        //Set e to the next element in the list before continuting
-        e = list_next (e);
-      }
-      else {
-        //If thread ticks are at zero, unblock the thread
-        thread_unblock (curr_thread);
-        e = list_next (e);
-        //Set e to next element before removing from the sleep_list 
-        list_remove (&curr_thread->sleep_elem);
-      }
-    }
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -237,11 +209,6 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  if(get_pri (t, 0) > get_pri(thread_current (), 0))
-    {
-      thread_yield();
-    }
-
   return tid;
 }
 
@@ -261,28 +228,6 @@ thread_block (void)
   schedule ();
 }
 
-/* Puts the current thread to sleep and places it in the 
-   sleeping list. It will not be awoken 
-
-   This function must be called with interrupts turned off.  It
-   is usually a better idea to use one of the synchronization
-   primitives in synch.h. */
-void
-thread_sleep (void) 
-{
-  ASSERT (!intr_context ());
-  ASSERT (intr_get_level () == INTR_OFF);
-
-  struct thread *t = thread_current();
-  
-  list_push_back (&sleep_list, &t->sleep_elem);
-  t->status = THREAD_BLOCKED;
-  
-  ASSERT (t->status == THREAD_BLOCKED);
-  
-  schedule ();
-}
-
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
    make the running thread ready.)
@@ -299,11 +244,9 @@ thread_unblock (struct thread *t)
   ASSERT (is_thread (t));
 
   old_level = intr_disable ();
-  
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
-  
   intr_set_level (old_level);
 }
 
@@ -396,87 +339,18 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-/* Gets priority of given thread, recursively (nested donations)*/
-int
-get_pri(struct thread *t, int depth)
-{
-  ASSERT (t != NULL);
-  if(depth > 8 || list_empty(&t->donor_list))
-    return t->priority;
-  int max_priority = t->priority;
-  struct list_elem *e;
-  for(e = list_begin (&t->donor_list); 
-    e != list_end (&t->donor_list); e = list_next (e))
-    {
-      struct thread *comp = list_entry (e, struct thread, donor_elem);
-      ASSERT (comp != NULL);
-      int comp_pri = get_pri (comp, depth++);
-      if (comp_pri > max_priority) 
-        {
-          max_priority = comp_pri;
-        }
-    }
-  return max_priority;
-}
-
-
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
 {
-  /* Have to disable interrupts so that nothing
-  interrupts the priority-setting. */
-  enum intr_level old_state; 
-  old_state = intr_disable (); 
-  
-  ASSERT (new_priority <= PRI_MAX);
-  ASSERT (new_priority >= PRI_MIN);
-  
-  bool yield = false;
-  struct thread* t = thread_current (); 
-  int old_priority = t->priority;
-  t->orig_priority = new_priority;
-  t->priority = new_priority;
-  if(old_priority > new_priority)
-    {
-      // Check for possible donors
-
-      struct list_elem *e;
-      /*
-      for(e = list_begin (&t->donor_list); 
-        e != list_end (&t->donor_list); e = list_next (e))
-        {
-          struct thread *comp = list_entry (e, struct thread, donor_elem);
-          if (comp->priority > t->priority) 
-            {
-              t->priority = comp->priority;
-            }
-        }
-      */
-
-      // Check if need to schedule 
-      int t_pri = get_pri(t, 0);
-      for(e = list_begin (&ready_list); 
-        e != list_end (&ready_list); e = list_next (e))
-        {
-          struct thread *comp = list_entry (e, struct thread, elem);
-          if (comp->priority > t_pri) 
-            {
-              yield = true;
-              break;
-            }
-        }
-    }
-  intr_set_level (old_state);
-  if(yield)
-    thread_yield ();
+  thread_current ()->priority = new_priority;
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  return get_pri(thread_current (), 0);
+  return thread_current ()->priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -596,15 +470,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
-  list_init(&t->donor_list);
-  t->lock_waiting = NULL;
-  t->orig_priority = priority;
-  t->parent = NULL;
-  t->pagedir = NULL;
 
-  // Initialize file descriptors to null (null means not open)
   int i;
-  for(i = 0; i < 128; i++)
+  for(i = 0; i <128; i++)
     {
       t->fd_table[i] = NULL;
     }
@@ -634,25 +502,7 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    {
-      struct list_elem *e = list_front (&ready_list);
-      struct thread *t = list_entry (e, struct thread, elem);
-      
-      int temp_priority = get_pri (t, 0);
-      
-      for(e = list_begin (&ready_list); 
-        e != list_end (&ready_list); e = list_next (e))
-        {
-          struct thread *comp = list_entry (e, struct thread, elem);
-          if (get_pri (comp, 0) > temp_priority) 
-            {
-              t = comp;
-              temp_priority = get_pri (t, 0);
-            }
-        }
-      list_remove(&t->elem);
-      return t;
-    }
+    return list_entry (list_pop_front (&ready_list), struct thread, elem);
 }
 
 /* Completes a thread switch by activating the new thread's page
