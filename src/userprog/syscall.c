@@ -55,7 +55,7 @@ valid_args(int num_args, struct intr_frame *f)
   return true;
 }
 
-// In general, when there is an error it is handled by syscall_exit (1)
+// In general, when there is an error it is handled by syscall_exit (-1)
 
 static void
 syscall_halt (struct intr_frame *f UNUSED)
@@ -92,7 +92,7 @@ syscall_create (struct intr_frame *f)
   if(!valid_args (2, f))
     {
       f->eax = -1;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   char* file_name = (char *)(f->esp + 4);
   int file_size = *(int*)(f->esp + 8);
@@ -100,7 +100,7 @@ syscall_create (struct intr_frame *f)
   if (!valid_usr_ptr (file_name))
     {
       f->eax = false;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   lock_acquire (&file_lock);
   bool success = filesys_create(file_name, file_size);
@@ -114,13 +114,13 @@ syscall_remove (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = false;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   char* file_name = (char *)(f->esp + 4);
   if (!valid_usr_ptr (file_name))
     {
       f->eax = false;
-      syscall_exit(1);
+      syscall_exit(-1);
     }
   lock_acquire (&file_lock);
   bool ret = filesys_remove (file_name);
@@ -134,12 +134,12 @@ syscall_open (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = false;
-      syscall_exit(1);
+      syscall_exit (-1);
     }
   char* file_name = (char *)(f->esp + 4);
   if (!valid_usr_ptr (file_name)) // Check argument
     {
-      syscall_exit(1);
+      syscall_exit (-1);
     }
   
   lock_acquire (&file_lock);
@@ -178,7 +178,7 @@ syscall_filesize (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = -1;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   int fd = *((int *)(f->esp + 4));
@@ -189,7 +189,7 @@ syscall_filesize (struct intr_frame *f)
   if( fd < 0 || fd >= 128 || file_ptr == NULL)
     {
       f->eax = -1;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   
   lock_acquire (&file_lock);
@@ -203,7 +203,7 @@ syscall_read (struct intr_frame *f)
   if (!valid_args (3, f))
     {
       f->eax = -1;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   // Multiples of 4 since variable takes 4 bytes
@@ -215,14 +215,14 @@ syscall_read (struct intr_frame *f)
   if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
       f->eax = -1; // Return -1 for error
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   if (fd < 0 || fd >= 128 || fd == 1) // Since we only have file descriptors 0-127
     {
       // Also, fd == 1 => error, since its STOUT_FILENO
       f->eax = -1; // Return -1 for error
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   else if (fd == 0)
     {
@@ -243,7 +243,7 @@ syscall_read (struct intr_frame *f)
       if (thread_current ()->fd_table[fd] == NULL)
         {
           f->eax = -1; // Return -1 for error
-          syscall_exit(1);
+          syscall_exit (-1);
         }
       else
         {
@@ -262,7 +262,7 @@ syscall_write (struct intr_frame *f)
   if (!valid_args (3, f))
     {
       f->eax = -1;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   // Multiples of 4 since variable takes 4 bytes
@@ -274,14 +274,14 @@ syscall_write (struct intr_frame *f)
   if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
     {
       f->eax = -1; // Return -1 for error
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
       // Also there is an error if fd == 0, since its STIN_FILENO
       f->eax = -1; // Return -1 for error
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   else if (fd == 1)
     {
@@ -307,7 +307,7 @@ syscall_write (struct intr_frame *f)
       if (thread_current ()->fd_table[fd] == NULL)
         {
           f->eax = -1; // Return -1 for error
-          syscall_exit(1);
+          syscall_exit (-1);
         }
       else
         {
@@ -325,7 +325,7 @@ syscall_seek (struct intr_frame *f)
 {
   if(!valid_args (2, f))
     {
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   int fd = *((int *)(f->esp + 4));
@@ -335,7 +335,7 @@ syscall_seek (struct intr_frame *f)
   // Note: fd[0] and fd[1] should be NULL
   if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
     {
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   struct file *file_ptr = thread_current ()->fd_table[fd];
   
@@ -350,7 +350,7 @@ syscall_tell (struct intr_frame *f)
   if(!valid_args (1, f))
     {
       f->eax = 0;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   int fd = *((int *)(f->esp + 4));
@@ -360,7 +360,7 @@ syscall_tell (struct intr_frame *f)
   if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
     {
       f->eax = 0;
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   struct file *file_ptr = thread_current ()->fd_table[fd];
   
@@ -374,7 +374,7 @@ syscall_close (struct intr_frame *f)
 {
   if(!valid_args (1, f))
     {
-      syscall_exit (1);
+      syscall_exit (-1);
     }
 
   int fd = *((int *)(f->esp + 4));
@@ -383,7 +383,7 @@ syscall_close (struct intr_frame *f)
   // Note: fd[0] and fd[1] should be NULL
   if( fd < 0 || fd >= 128 || thread_current ()->fd_table[fd] == NULL)
     {
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   struct file *file_ptr = thread_current ()->fd_table[fd];
   
@@ -400,7 +400,7 @@ syscall_handler (struct intr_frame *f)
 
   if(!valid_usr_ptr (f->esp))
     {
-      syscall_exit (1);
+      syscall_exit (-1);
     }
   switch (*syscall_num)
     {
@@ -471,7 +471,7 @@ syscall_handler (struct intr_frame *f)
         }
       default:
         {
-          syscall_exit (1);
+          syscall_exit (-1);
           break;
         }
     }
