@@ -217,7 +217,8 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void** esp);
+static bool setup_stack (void **esp, const char* cmd_line);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -462,10 +463,63 @@ push (uint8_t *kpage, size_t *offset, const void *buf, size_t size)
   return kpage + *offset + (padsize - size);
 }
 
+static bool
+setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void** esp)
+{
+  size_t ofs = PGSIZE; //## Used in push!
+  const char* null = NULL; //## Used for pushing nulls.
+  char* ptr; // strtok_r usage
+  int argc = 0;
+  
+  // Parse and put in command line arguments
+  // Push each one onto the stack
+  
+  // Calculate argc  
+  char* arg;
+  arg = strtok_r(cmd_line, " ", &ptr);
+  while (arg != NULL)
+    {
+      argc++; //Because we have added one argument
+      arg = strtok_r (NULL, " ", &program); //Advance arg one more
+    }
+ 
+  // argc is now accurate
+  
+  char** argv = malloc(argc);
+
+  // Push arguments onto the stack
+  
+  char *tok;  
+  for (tok = (char *) cmd_line; tok != NULL; tok = strtok_r (NULL, " ", ptr))
+    {
+      *esp -= strlen (tok) + 1;
+      argv[argc] = *esp;
+      
+      void* ret = push (kpage, &ofs, tok, strlen(tok) + 1);
+      if (ret == NULL)
+         return false;
+    }
+  
+  void* ret = push (kpage, &ofs, &null, sizeof(null));
+  if (ret == NULL)
+    return false;
+
+  // Push argv in reverse
+  // push argc
+  // push &null
+  // shoudl check null return?
+  
+  // Set the stack pointer
+  *esp = upage + ofs;
+  
+  // Nothing has failed thus far. Return true.
+  return true;
+}
+
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, const char* cmd_line) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -473,9 +527,11 @@ setup_stack (void **esp)
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+      uint8_t* upage = (((uint8_t *) PHYS_BASE) - PGSIZE;
+      success = install_page (upage, kpage, true);
       if (success)
         *esp = PHYS_BASE - 12; // RECOMMENDED IN "SUGGESTED ORDER OF IMPLEMENTATION"; NEED TO CHANGE LATER
+        //success = setup_stack_helper(cmd_line, kpage, upage, esp);
       else
         palloc_free_page (kpage);
     }
