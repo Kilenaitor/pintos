@@ -17,6 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -46,10 +47,19 @@ process_execute (const char *file_name)
       return tid;
     }
 
+  // Semaphore will wait until child calls sema_up 
   sema_down (&thread_current ()->load_sema);
   // If not successfully loaded
   if (thread_current ()->load_success == false)
     {
+      // Check if child was created (should've been created)
+      // Then frees resources
+      struct child_process *c = get_child_process(tid, thread_current ());
+      if(c != NULL)
+        {
+          list_remove (&c->elem);
+          free (c);
+        }
     }
 
   return tid;
@@ -116,14 +126,15 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-  /*  
-  if (cur->parent != NULL)
-    {
-      cur->parent->child_ret = cur->child_ret;
-    }
+  printf ("%s: exit(%i)\n", cur->name, cur->exit_status);	
 
-  printf ("%s: exit(%i)\n", cur->name, cur->child_ret);	
-  */
+  // Free child_process structs in current_thread ()
+  while (!list_empty (&thread_current ()->child_list))
+    {
+      struct list_elem *e = list_pop_front(&thread_current ()->child_list);
+      struct child_process *c = list_entry (e, struct child_process, elem);
+      free (c);
+    }
   
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

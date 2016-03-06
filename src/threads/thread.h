@@ -28,10 +28,11 @@ typedef int tid_t;
 struct child_process
 {
   tid_t tid;
-  int ret_val;
+  int exit_status;
   bool exited;
   struct list_elem elem; 
-}
+};
+
 
 /* A kernel thread or user process.
 
@@ -111,9 +112,11 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     struct file *fd_table[128]; // Limit to 128 files open
+    struct thread *parent;
     struct semaphore load_sema;
     bool load_success;
     struct list child_list;
+    int exit_status;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -151,5 +154,11 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+struct child_process * get_child_process (tid_t child_tid, struct thread *t);
+
+// Sets parent of children to NULL
+void set_children_parent_null (struct thread *t);
+
 
 #endif /* threads/thread.h */
