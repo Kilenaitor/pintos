@@ -72,18 +72,32 @@ syscall_exit (int status UNUSED)
 }
 
 static void
-syscall_exec (struct intr_frame *f UNUSED)
+syscall_exec (struct intr_frame *f)
 {
-  /*
-  thread_current ()->has_child = 0;
-  int pid = process_execute ((char *)(f->esp + 4)); 
-  */
-  
+  if(!valid_args (1, f))
+    {
+      f->eax = -1;
+      syscall_exit (-1);
+    }
+  char* cmd_line = (char *)(f->esp + 4);
+  if (!valid_usr_ptr (cmd_line))
+    {
+      f->eax = -1;
+      syscall_exit(-1);
+    }
+  f->eax = process_execute (cmd_line);
 }
 
 static void
-syscall_wait (struct intr_frame *f UNUSED)
+syscall_wait (struct intr_frame *f)
 {
+  if(!valid_args (1, f))
+    {
+      f->eax = -1;
+      syscall_exit (-1);
+    }
+  pid_t pid = *((pid_t *)(f->esp + 4));
+  f->eax = process_wait (pid);
 }
 
 static void
@@ -91,7 +105,7 @@ syscall_create (struct intr_frame *f)
 {
   if(!valid_args (2, f))
     {
-      f->eax = -1;
+      f->eax = false;
       syscall_exit (-1);
     }
   char* file_name = (char *)(f->esp + 4);
