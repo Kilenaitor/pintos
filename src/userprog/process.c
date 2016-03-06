@@ -53,7 +53,7 @@ process_execute (const char *file_name)
   if (thread_current ()->load_success == false)
     {
       // Check if child was created (should've been created)
-      // Then frees resources
+      // Then frees resources (since not successfully loaded)
       struct child_process *c = get_child_process(tid, thread_current ());
       if(c != NULL)
         {
