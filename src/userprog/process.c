@@ -549,7 +549,10 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
       if (ret == NULL)
         return false;
     } 
- 
+  
+  // Done with argv
+  free(argv);
+  
   // push argc
   void* ret = push (kpage, &ofs, argc, sizeof(int));
   if (ret == NULL)
@@ -562,7 +565,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   
   // Set the stack pointer
   *esp = upage + ofs;
-  
+   
   // Nothing has failed thus far. Return true.
   return true;
 }
