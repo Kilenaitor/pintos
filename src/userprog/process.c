@@ -106,14 +106,32 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  // TODO: 
-  // temporarily do this "Suggested Order of Implementation"
+  /*
   while(true)
   {
   }
-  return -1;
+  */
+  // return -1;
+  struct child_process *cp = get_child_process (child_tid, thread_current ());
+  if(cp == NULL)
+  {
+    // Means that either the child process was already waited
+    // OR that the process was not a child of the current_thread ()
+    return -1;
+  }
+  // cp->wait = true; // Was in the pseudocode provided but don't think it's needed
+  while (!cp->exited)
+    {
+    }
+  int status = cp->exit_status;
+
+  // Remove child process
+  list_remove (&cp->elem);
+  free (cp);
+
+  return status;
 }
 
 /* Free the current process's resources. */
