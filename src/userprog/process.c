@@ -39,8 +39,11 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  char *ptr;
+  char *actual_file_name = strtok_r((char *)file_name, " ", &ptr);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (actual_file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     {
       palloc_free_page (fn_copy); 
@@ -124,6 +127,7 @@ process_wait (tid_t child_tid)
   // cp->wait = true; // Was in the pseudocode provided but don't think it's needed
   while (!cp->exited)
     {
+      thread_yield (); // Not sure if needed
     }
   int status = cp->exit_status;
 
@@ -361,7 +365,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
 
   /* Start address. */

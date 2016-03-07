@@ -66,17 +66,17 @@ syscall_halt (struct intr_frame *f UNUSED)
 static void
 syscall_exit (int status)
 {
-  thread_current ()->exit_status = status
+  thread_current ()->exit_status = status;
   if(thread_current ()->parent != NULL)
     {
-      struct child *c = get_child (thread_current ()->tid, thread_current ()->parent);
+      struct child_process *c = get_child_process (thread_current ()->tid, thread_current ()->parent);
       // if c was NULL, that means child not on parents child list 
       // (shouldn't happen but just in case
       if(c != NULL)
         {
           // Set exit status in parent
           c->exit_status = status;
-          child->exited = true;
+          c->exited = true;
         }
     }
   // For each child of thread_current (), set the child's parent to NULL
@@ -86,7 +86,7 @@ syscall_exit (int status)
   int i;
   for(i = 0; i < 128; i++)
     {
-      struct file *file_ptr = cur->fd_table[i];
+      struct file *file_ptr = thread_current ()->fd_table[i];
       if(file_ptr != NULL)
         {
           lock_acquire (&file_lock);
@@ -131,7 +131,7 @@ syscall_wait (struct intr_frame *f)
       f->eax = -1;
       syscall_exit (-1);
     }
-  pid_t pid = *((pid_t *)(f->esp + 4));
+  tid_t pid = *((tid_t *)(f->esp + 4));
   f->eax = process_wait (pid);
 }
 
