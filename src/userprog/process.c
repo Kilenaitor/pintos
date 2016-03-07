@@ -487,7 +487,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   while (arg != NULL)
     {
       argc++; //Because we have added one argument
-      arg = strtok_r (NULL, " ", &program); //Advance arg one more
+      arg = strtok_r (NULL, " ", &ptr); //Advance arg one more
     }
  
   // argc is now accurate
@@ -497,7 +497,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   // Push arguments onto the stack
   
   char *tok;  
-  for (tok = (char *) cmd_line; tok != NULL; tok = strtok_r (NULL, " ", ptr))
+  for (tok = strok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
     {
       *esp -= strlen (tok) + 1;
       argv[argc] = *esp;
@@ -510,7 +510,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   void* ret = push (kpage, &ofs, &null, sizeof(null));
   if (ret == NULL)
     return false;
-
+ 
+  
   // Push argv in reverse
   // push argc
   // push &null
