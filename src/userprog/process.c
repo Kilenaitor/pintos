@@ -511,6 +511,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   char* ptr; // strtok_r usage
   int argc = 0;
   
+  printf("Command line entry is: %s\n", cmd_line);
   // Parse and put in command line arguments
   // Push each one onto the stack
   
@@ -541,30 +542,48 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
     }
   
   // push null
-  void* ret = push (kpage, &ofs, &null, sizeof(null));
+  void* ret = push (kpage, &ofs, &null, sizeof (null));
   if (ret == NULL)
     return false;
+ 
+  // Have to align to word size 
+  // of 4 bytes
+  int i = (size_t) *esp % 4;
+  if (i)
+    {
+      *esp -= i;
+      ret = push (kpage, &ofs, &argv[argc], i);
+      if (ret == NULL)
+        return false;
+    }  
   
   // push elements in reverse
-  int i;
   for (i = argc; i >= 0; i--)
     {
       *esp -= sizeof(char*);
-      ret = push (kpage, &ofs, argv[i], sizeof(char*));
+      ret = push (kpage, &ofs, &argv[i], sizeof (char*));
       if (ret == NULL)
         return false;
     } 
   
+  // push argv
+  tok = *esp;
+  *esp -= sizeof (char**);
+  ret = push (kpage, &ofs, &tok, sizeof (char**));
+  if (ret == NULL)
+    return false;
+
   // Done with argv
   free(argv);
-  
+
   // push argc
-  ret = push (kpage, &ofs, argc, sizeof(int));
+  *esp -= sizeof(int);
+  ret = push (kpage, &ofs, &argc, sizeof (int));
   if (ret == NULL)
     return false;
   
   // push another null
-  ret = push (kpage, &ofs, &null, sizeof(null));
+  ret = push (kpage, &ofs, &null, sizeof (null));
   if (ret == NULL)
     return false;
   
