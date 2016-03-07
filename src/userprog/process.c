@@ -525,9 +525,6 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   char* ptr; // strtok_r usage
   int argc = 0;
   
-<<<<<<< HEAD
-=======
->>>>>>> b96a1cca45e291a5ef0e7bc32af0d59d9c5f0c12
   // Parse and put in command line arguments
   // Push each one onto the stack
   
