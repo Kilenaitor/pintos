@@ -581,8 +581,8 @@ setup_stack (void **esp, const char* cmd_line)
       uint8_t* upage = (((uint8_t *) PHYS_BASE) - PGSIZE;
       success = install_page (upage, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12; // RECOMMENDED IN "SUGGESTED ORDER OF IMPLEMENTATION"; NEED TO CHANGE LATER
-        //success = setup_stack_helper(cmd_line, kpage, upage, esp);
+        // *esp = PHYS_BASE - 12; // RECOMMENDED IN "SUGGESTED ORDER OF IMPLEMENTATION"; NEED TO CHANGE LATER
+        success = setup_stack_helper(cmd_line, kpage, upage, esp);
       else
         palloc_free_page (kpage);
     }
