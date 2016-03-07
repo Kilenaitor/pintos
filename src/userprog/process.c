@@ -511,7 +511,6 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   char* ptr; // strtok_r usage
   int argc = 0;
   
-  printf("Command line entry is: %s\n", cmd_line);
   // Parse and put in command line arguments
   // Push each one onto the stack
   
