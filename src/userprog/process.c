@@ -295,9 +295,14 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-
+  char *fn_copy;
+  fn_copy = palloc_get_page (0);
+  if (fn_copy == NULL)
+    return false;
+  strlcpy (fn_copy, file_name, PGSIZE);
+  
   char *ptr;
-  char *actual_file_name = strtok_r((char *)file_name, " ", &ptr);
+  char *actual_file_name = strtok_r(fn_copy, " ", &ptr);
 
   file = filesys_open (actual_file_name);
   if (file == NULL) 
@@ -305,7 +310,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
-
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -549,7 +553,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
       *esp -= strlen (tok) + 1;
       argv[argc] = *esp;
       
-      void* ret = push (kpage, &ofs, tok, strlen(tok) + 1);
+      void* ret = push (kpage, &ofs, &tok, strlen(tok) + 1);
       if (ret == NULL)
          return false;
     }
