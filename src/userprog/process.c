@@ -87,7 +87,17 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
-    thread_exit ();
+    {
+      thread_current ()->exit_status = -1;
+      thread_current ()->parent->load_success = false;
+      sema_up (&thread_current ()->parent->load_sema);
+      thread_exit ();
+    }
+  else
+    {
+      thread_current ()->parent->load_success = true;
+      sema_up (&thread_current ()->parent->load_sema);
+    }
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -285,7 +295,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
+
+  char *ptr;
+  char *actual_file_name = strtok_r((char *)file_name, " ", &ptr);
+
+  file = filesys_open (actual_file_name);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -511,7 +525,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   char* ptr; // strtok_r usage
   int argc = 0;
   
-  printf("Command line entry is: %s\n", cmd_line);
+  //printf("Command line entry is: %s\n", cmd_line);
   // Parse and put in command line arguments
   // Push each one onto the stack
   
