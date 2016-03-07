@@ -13,7 +13,6 @@
 #include "devices/input.h"
 
 static void syscall_handler (struct intr_frame *);
-struct lock file_lock;
 
 void
 syscall_init (void) 
@@ -65,9 +64,39 @@ syscall_halt (struct intr_frame *f UNUSED)
 
 
 static void
-syscall_exit (int status UNUSED)
+syscall_exit (int status)
 {
-  // TODO: NEED TO DO SOMETHING WITH STATUS
+  thread_current ()->exit_status = status
+  if(thread_current ()->parent != NULL)
+    {
+      struct child *c = get_child (thread_current ()->tid, thread_current ()->parent);
+      // if c was NULL, that means child not on parents child list 
+      // (shouldn't happen but just in case
+      if(c != NULL)
+        {
+          // Set exit status in parent
+          c->exit_status = status;
+          child->exited = true;
+        }
+    }
+  // For each child of thread_current (), set the child's parent to NULL
+  set_children_parent_null (thread_current ());
+  
+  // Close files
+  int i;
+  for(i = 0; i < 128; i++)
+    {
+      struct file *file_ptr = cur->fd_table[i];
+      if(file_ptr != NULL)
+        {
+          lock_acquire (&file_lock);
+          file_close(file_ptr);
+          lock_release (&file_lock);
+        }
+    }
+  
+
+  // Resources are freed in process_exit ()
   thread_exit ();
 }
 
@@ -85,7 +114,13 @@ syscall_exec (struct intr_frame *f)
       f->eax = -1;
       syscall_exit(-1);
     }
+
+  // Lock for 2 reasons:
+  // 1. process_execute uses filesys_open ()
+  // 2. Allowing multiple process_executes could mess with the semaphore used
+  lock_acquire (&file_lock);
   f->eax = process_execute (cmd_line);
+  lock_release (&file_lock);
 }
 
 static void
@@ -425,7 +460,12 @@ syscall_handler (struct intr_frame *f)
         }
       case SYS_EXIT:
         {
-          syscall_exit (0);
+          if(!valid_args (1, f))
+            {
+              syscall_exit (-1);
+            }
+          int exit_status = *((int *)(f->esp + 4));
+          syscall_exit (exit_status);
           break;
         }
       case SYS_EXEC:

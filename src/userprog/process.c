@@ -17,6 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -46,10 +47,19 @@ process_execute (const char *file_name)
       return tid;
     }
 
+  // Semaphore will wait until child calls sema_up 
   sema_down (&thread_current ()->load_sema);
   // If not successfully loaded
   if (thread_current ()->load_success == false)
     {
+      // Check if child was created (should've been created)
+      // Then frees resources (since not successfully loaded)
+      struct child_process *c = get_child_process(tid, thread_current ());
+      if(c != NULL)
+        {
+          list_remove (&c->elem);
+          free (c);
+        }
     }
 
   return tid;
@@ -96,14 +106,32 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  // TODO: 
-  // temporarily do this "Suggested Order of Implementation"
+  /*
   while(true)
   {
   }
-  return -1;
+  */
+  // return -1;
+  struct child_process *cp = get_child_process (child_tid, thread_current ());
+  if(cp == NULL)
+  {
+    // Means that either the child process was already waited
+    // OR that the process was not a child of the current_thread ()
+    return -1;
+  }
+  // cp->wait = true; // Was in the pseudocode provided but don't think it's needed
+  while (!cp->exited)
+    {
+    }
+  int status = cp->exit_status;
+
+  // Remove child process
+  list_remove (&cp->elem);
+  free (cp);
+
+  return status;
 }
 
 /* Free the current process's resources. */
@@ -116,14 +144,15 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-  /*  
-  if (cur->parent != NULL)
-    {
-      cur->parent->child_ret = cur->child_ret;
-    }
+  printf ("%s: exit(%i)\n", cur->name, cur->exit_status);	
 
-  printf ("%s: exit(%i)\n", cur->name, cur->child_ret);	
-  */
+  // Free child_process structs in current_thread ()
+  while (!list_empty (&thread_current ()->child_list))
+    {
+      struct list_elem *e = list_pop_front(&thread_current ()->child_list);
+      struct child_process *c = list_entry (e, struct child_process, elem);
+      free (c);
+    }
   
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

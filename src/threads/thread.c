@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -183,11 +184,19 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->parent = thread_current ();
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
   old_level = intr_disable ();
+
+  // Allocate memory for child and add to list of parent
+  // Do this with interrupts disabled, so adding to list isn't interrupted
+  struct child_process *c = malloc (sizeof (struct child_process));
+  c->tid = tid;
+  c->exited = false;
+  list_push_back(&thread_current ()->child_list, &c->elem);
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -472,6 +481,7 @@ init_thread (struct thread *t, const char *name, int priority)
   list_push_back (&all_list, &t->allelem);
   list_init (&t->child_list);
   sema_init (&t->load_sema, 0);
+  t->parent = NULL;
 
   int i;
   for(i = 0; i <128; i++)
@@ -593,3 +603,36 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+struct child_process * 
+get_child_process (tid_t child_tid, struct thread *t)
+{
+  struct list_elem *e;
+  for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
+       e = list_next (e))
+    {
+      struct child_process *ret = list_entry (e, struct child_process, elem);
+      if(child_tid == ret->tid)
+        {
+          return ret;
+        }
+    }
+    return NULL;
+}
+
+// Sets parent of children to NULL
+// Helper for syscall_exit ()
+void 
+set_children_parent_null (struct thread *t)
+{
+  struct list_elem *e;
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *c = list_entry (e, struct thread, allelem);
+      if(c->parent == t)
+        {
+          c->parent = NULL;
+        }
+    }
+}
