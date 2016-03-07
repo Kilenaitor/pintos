@@ -536,15 +536,29 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
          return false;
     }
   
+  // push null
   void* ret = push (kpage, &ofs, &null, sizeof(null));
   if (ret == NULL)
     return false;
- 
   
-  // Push argv in reverse
+  // push elements in reverse
+  for (i = argc, i >= 0; i--)
+    {
+      *esp -= sizeof(char*);
+      void* ret = push (kpage, &ofs, argv[i], sizeof(char*));
+      if (ret == NULL)
+        return false;
+    } 
+ 
   // push argc
-  // push &null
-  // shoudl check null return?
+  void* ret = push (kpage, &ofs, argc, sizeof(int));
+  if (ret == NULL)
+    return false;
+  
+  // push another null
+  void* ret = push (kpage, &ofs, &null, sizeof(null));
+  if (ret == NULL)
+    return false;
   
   // Set the stack pointer
   *esp = upage + ofs;
