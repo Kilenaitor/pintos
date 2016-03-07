@@ -526,7 +526,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   // Push arguments onto the stack
   
   char *tok;  
-  for (tok = strok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
+  for (tok = strtok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
     {
       *esp -= strlen (tok) + 1;
       argv[argc] = *esp;
@@ -542,10 +542,11 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
     return false;
   
   // push elements in reverse
-  for (i = argc, i >= 0; i--)
+  int i;
+  for (i = argc; i >= 0; i--)
     {
       *esp -= sizeof(char*);
-      void* ret = push (kpage, &ofs, argv[i], sizeof(char*));
+      ret = push (kpage, &ofs, argv[i], sizeof(char*));
       if (ret == NULL)
         return false;
     } 
@@ -554,12 +555,12 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   free(argv);
   
   // push argc
-  void* ret = push (kpage, &ofs, argc, sizeof(int));
+  ret = push (kpage, &ofs, argc, sizeof(int));
   if (ret == NULL)
     return false;
   
   // push another null
-  void* ret = push (kpage, &ofs, &null, sizeof(null));
+  ret = push (kpage, &ofs, &null, sizeof(null));
   if (ret == NULL)
     return false;
   
@@ -581,7 +582,7 @@ setup_stack (void **esp, const char* cmd_line)
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
-      uint8_t* upage = (((uint8_t *) PHYS_BASE) - PGSIZE;
+      uint8_t* upage = ((uint8_t *) PHYS_BASE) - PGSIZE;
       success = install_page (upage, kpage, true);
       if (success)
         // *esp = PHYS_BASE - 12; // RECOMMENDED IN "SUGGESTED ORDER OF IMPLEMENTATION"; NEED TO CHANGE LATER
