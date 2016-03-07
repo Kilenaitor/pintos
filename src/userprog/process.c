@@ -532,9 +532,16 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   // Parse and put in command line arguments
   // Push each one onto the stack
   
+  // Make a copy of the string
+  // for processing argc
+  char* fn_copy = palloc_get_page(0);
+  if (fn_copy == NULL)
+    return false;
+  strlcpy (fn_copy, cmd_line, PGSIZE);
+   
   // Calculate argc  
   char* arg;
-  arg = strtok_r(cmd_line, " ", &ptr);
+  arg = strtok_r(fn_copy, " ", &ptr);
   while (arg != NULL)
     {
       argc++; //Because we have added one argument
@@ -544,19 +551,25 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   // argc is now accurate
   
   char** argv = malloc(argc);
-
+  
   // Push arguments onto the stack
   
-  char *tok;  
+  char *tok;
+  int k = 0;  
   for (tok = strtok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
     {
       *esp -= strlen (tok) + 1;
-      argv[argc] = *esp;
+      argv[k] = *esp;
       
-      void* ret = push (kpage, &ofs, &tok, strlen(tok) + 1);
+      printf("Argument pushed: %s\n", tok);
+      printf("Address stored: %p\n", argv[k]); 
+      void* ret = push (kpage, &ofs, tok, strlen(tok)+1);
       if (ret == NULL)
          return false;
+
+      k++;
     }
+  printf("Pushing null here\n"); 
   
   // push null
   void* ret = push (kpage, &ofs, &null, sizeof (null));
@@ -578,6 +591,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   for (i = argc; i >= 0; i--)
     {
       *esp -= sizeof(char*);
+      
       ret = push (kpage, &ofs, &argv[i], sizeof (char*));
       if (ret == NULL)
         return false;
@@ -606,7 +620,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   
   // Set the stack pointer
   *esp = upage + ofs;
-   
+  
+  hex_dump((uintptr_t) &esp, kpage, PGSIZE, true);  
   // Nothing has failed thus far. Return true.
   return true;
 }
