@@ -63,6 +63,7 @@ process_execute (const char *file_name)
           list_remove (&c->elem);
           free (c);
         }
+      return -1;
     }
   return tid;
 }
