@@ -268,7 +268,8 @@ syscall_read (struct intr_frame *f)
       syscall_exit (-1);
     }
   
-  if(!is_user_vaddr(buffer) || buffer < ((void *) 0x08048000))
+  // if(!is_user_vaddr(buffer) || buffer < ((void *) 0x08048000))
+  if (!valid_usr_ptr (buffer))
     {
       f->eax = -1;
       syscall_exit (-1);

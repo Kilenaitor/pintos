@@ -556,7 +556,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   
   char *tok;
   int k = 0;  
-  for (tok = strtok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
+  for (tok = strtok_r ((char *)cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
     {
       
       //printf("Argument pushed: %s\n", tok);
