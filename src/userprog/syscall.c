@@ -257,7 +257,8 @@ syscall_read (struct intr_frame *f)
 
   // Multiples of 4 since variable takes 4 bytes
   int fd = *((int *)(f->esp + 4));
-  void *buffer = (void *)(f->esp + 8);
+  // void *buffer = (void *)(f->esp + 8);
+  char *buffer = (char *)(*(void **)(f->esp + 8));
   unsigned size = *((unsigned *)(f->esp + 12));
 
   // Check buffer size
