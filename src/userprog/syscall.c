@@ -108,7 +108,7 @@ syscall_exec (struct intr_frame *f)
       f->eax = -1;
       syscall_exit (-1);
     }
-  char* cmd_line = (char *)(f->esp + 4);
+  char* cmd_line = (char *)(*(void **)(f->esp + 4));
   if (!valid_usr_ptr (cmd_line))
     {
       f->eax = -1;
@@ -143,7 +143,7 @@ syscall_create (struct intr_frame *f)
       f->eax = false;
       syscall_exit (-1);
     }
-  char* file_name = (char *)(f->esp + 4);
+  char* file_name = (char *)(*(void **)(f->esp + 4));
   int file_size = *(int*)(f->esp + 8);
   
   if (!valid_usr_ptr (file_name))
@@ -165,7 +165,7 @@ syscall_remove (struct intr_frame *f)
       f->eax = false;
       syscall_exit (-1);
     }
-  char* file_name = (char *)(f->esp + 4);
+  char* file_name = (char *)(*(void **)(f->esp + 4));
   if (!valid_usr_ptr (file_name))
     {
       f->eax = false;
@@ -185,7 +185,7 @@ syscall_open (struct intr_frame *f)
       f->eax = false;
       syscall_exit (-1);
     }
-  char* file_name = (char *)(f->esp + 4);
+  char* file_name = (char *)(*(void **)(f->esp + 4));
   if (!valid_usr_ptr (file_name)) // Check argument
     {
       syscall_exit (-1);

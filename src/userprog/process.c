@@ -566,6 +566,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
       // printf("Argument pushed: %s\n", tok);
       // printf("Address stored: %p\n", argv[k]); 
       void* ret = push (kpage, &ofs, tok, strlen(tok)+1);
+      // printf("post-Argument pushed: %s\n", tok);
       argv[k] = ret;
       if (ret == NULL)
          return false;
