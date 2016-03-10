@@ -308,6 +308,7 @@ syscall_read (struct intr_frame *f)
 static void
 syscall_write (struct intr_frame *f)
 {
+  // printf ("Write started\n");
   if (!valid_args (3, f))
     {
       f->eax = -1;
@@ -316,8 +317,14 @@ syscall_write (struct intr_frame *f)
 
   // Multiples of 4 since variable takes 4 bytes
   int fd = *((int *)(f->esp + 4));
-  void *buffer = (void *)(f->esp + 8);
+  //void *buffer = (void *)(f->esp + 8);
+  char *buffer = (char *)(*(void **)(f->esp + 8));
   unsigned size = *((unsigned *)(f->esp + 12));
+
+  /*
+  printf ("1\n");
+  printf ("%u", (unsigned)(*((char *)buffer)));
+  */
 
   // Check buffer size
   if (!valid_usr_ptr (buffer) || !valid_usr_ptr (buffer + size - 1))
@@ -325,6 +332,7 @@ syscall_write (struct intr_frame *f)
       f->eax = -1; // Return -1 for error
       syscall_exit (-1);
     }
+  // printf ("2\n");
 
   if (fd <= 0 || fd >= 128) // Since we only have file descriptors 0-127
     {
@@ -334,12 +342,16 @@ syscall_write (struct intr_frame *f)
     }
   else if (fd == 1)
     {
+      // printf ("3\n");
       // write to console
       
       // If size is bigger than a few hunder bytes, 
       // break it up into chunks (chose 512)
       unsigned size_remaining = size;
       char *cbuff = buffer;
+      // printf ("4\n");
+      // printf (cbuff);
+      // printf ("\n");
       while(size_remaining > 512)
         {
           putbuf (cbuff, 512); // Write 512 bytes to buffer
@@ -347,6 +359,7 @@ syscall_write (struct intr_frame *f)
           cbuff += 512; // Add 512 to address of where to write
         }
       putbuf (cbuff, size_remaining);
+      // printf ("---------------");
     }
   else
     {

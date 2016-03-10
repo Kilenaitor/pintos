@@ -529,7 +529,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   char* ptr; // strtok_r usage
   int argc = 0;
 
-  printf("1: %p\n", *esp);
+  // printf("1: %p\n", *esp);
   
   // Parse and put in command line arguments
   // Push each one onto the stack
@@ -563,8 +563,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
       //*esp -= strlen (tok) + 1;
       //argv[k] = *esp;
       
-      printf("Argument pushed: %s\n", tok);
-      printf("Address stored: %p\n", argv[k]); 
+      // printf("Argument pushed: %s\n", tok);
+      // printf("Address stored: %p\n", argv[k]); 
       void* ret = push (kpage, &ofs, tok, strlen(tok)+1);
       argv[k] = ret;
       if (ret == NULL)
@@ -572,8 +572,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
 
       k++;
     }
-  printf("2: %p\n", *esp);
-  printf("Pushing null here\n"); 
+  // printf("2: %p\n", *esp);
+  // printf("Pushing null here\n"); 
   
   // push null
   void* ret = push (kpage, &ofs, &null, sizeof (null));
@@ -608,7 +608,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   //tok = *esp;
   //*esp -= sizeof (char**);
   //ret should hold the kpage address of the argv[0]
-  char *uargv = (char *)upage + ((char *)ret - (char *)kpage);
+  //char *uargv = (char *)upage + ((char *)ret - (char *)kpage);
+  char *uargv = (char *)upage + ofs;
   ret = push (kpage, &ofs, &uargv, sizeof (char**));
   if (ret == NULL)
     return false;
@@ -629,9 +630,9 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   
   // Set the stack pointer
   *esp = upage + ofs;
-  printf ("upage: %p\n", upage);
+  // printf ("upage: %p\n", upage);
   
-  hex_dump((uintptr_t) &esp, kpage, PGSIZE, true);  
+  // hex_dump((uintptr_t) &esp, kpage, PGSIZE, true);  
   // Nothing has failed thus far. Return true.
   return true;
 }
@@ -645,7 +646,7 @@ setup_stack (void **esp, const char* cmd_line)
   bool success = false;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  printf ("kpage: %p\n", kpage);
+  // printf ("kpage: %p\n", kpage);
   if (kpage != NULL) 
     {
       uint8_t* upage = ((uint8_t *) PHYS_BASE) - PGSIZE;
