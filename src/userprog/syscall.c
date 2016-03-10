@@ -267,7 +267,13 @@ syscall_read (struct intr_frame *f)
       f->eax = -1; // Return -1 for error
       syscall_exit (-1);
     }
-
+  
+  if(!is_user_vaddr(buffer) || buffer < ((void *) 0x08048000))
+    {
+      f->eax = -1;
+      syscall_exit (-1);
+    }
+  
   if (fd < 0 || fd >= 128 || fd == 1) // Since we only have file descriptors 0-127
     {
       // Also, fd == 1 => error, since its STOUT_FILENO
@@ -449,7 +455,8 @@ syscall_close (struct intr_frame *f)
       syscall_exit (-1);
     }
   struct file *file_ptr = thread_current ()->fd_table[fd];
-  
+  thread_current ()->fd_table[fd] = NULL; 
+
   lock_acquire (&file_lock);
   file_close(file_ptr);
   lock_release (&file_lock);
