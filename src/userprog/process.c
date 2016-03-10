@@ -528,6 +528,8 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   const char* null = NULL; //## Used for pushing nulls.
   char* ptr; // strtok_r usage
   int argc = 0;
+
+  printf("1: %p\n", *esp);
   
   // Parse and put in command line arguments
   // Push each one onto the stack
@@ -558,24 +560,27 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   int k = 0;  
   for (tok = strtok_r (cmd_line, " ", &ptr); tok != NULL; tok = strtok_r (NULL, " ", &ptr))
     {
-      *esp -= strlen (tok) + 1;
-      argv[k] = *esp;
+      //*esp -= strlen (tok) + 1;
+      //argv[k] = *esp;
       
       printf("Argument pushed: %s\n", tok);
       printf("Address stored: %p\n", argv[k]); 
       void* ret = push (kpage, &ofs, tok, strlen(tok)+1);
+      argv[k] = ret;
       if (ret == NULL)
          return false;
 
       k++;
     }
+  printf("2: %p\n", *esp);
   printf("Pushing null here\n"); 
   
   // push null
   void* ret = push (kpage, &ofs, &null, sizeof (null));
   if (ret == NULL)
     return false;
- 
+  int i;
+/* 
   // Have to align to word size 
   // of 4 bytes
   int i = (size_t) *esp % 4;
@@ -585,22 +590,26 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
       ret = push (kpage, &ofs, &argv[argc], i);
       if (ret == NULL)
         return false;
-    }  
+    }  */
   
   // push elements in reverse
-  for (i = argc; i >= 0; i--)
+  for (i = argc-1; i >= 0; i--)
     {
-      *esp -= sizeof(char*);
+      //*esp -= sizeof(char*);
       
-      ret = push (kpage, &ofs, &argv[i], sizeof (char*));
+      char *uarg = (char *)upage + (argv[i] - (char *)kpage);
+      
+      ret = push (kpage, &ofs, &uarg, sizeof (char*));
       if (ret == NULL)
         return false;
     } 
   
   // push argv
-  tok = *esp;
-  *esp -= sizeof (char**);
-  ret = push (kpage, &ofs, &tok, sizeof (char**));
+  //tok = *esp;
+  //*esp -= sizeof (char**);
+  //ret should hold the kpage address of the argv[0]
+  char *uargv = (char *)upage + ((char *)ret - (char *)kpage);
+  ret = push (kpage, &ofs, &uargv, sizeof (char**));
   if (ret == NULL)
     return false;
 
@@ -608,7 +617,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   free(argv);
 
   // push argc
-  *esp -= sizeof(int);
+  //*esp -= sizeof(int);
   ret = push (kpage, &ofs, &argc, sizeof (int));
   if (ret == NULL)
     return false;
@@ -620,6 +629,7 @@ setup_stack_helper (const char* cmd_line, uint8_t* kpage, uint8_t* upage, void**
   
   // Set the stack pointer
   *esp = upage + ofs;
+  printf ("upage: %p\n", upage);
   
   hex_dump((uintptr_t) &esp, kpage, PGSIZE, true);  
   // Nothing has failed thus far. Return true.
@@ -635,6 +645,7 @@ setup_stack (void **esp, const char* cmd_line)
   bool success = false;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  printf ("kpage: %p\n", kpage);
   if (kpage != NULL) 
     {
       uint8_t* upage = ((uint8_t *) PHYS_BASE) - PGSIZE;
